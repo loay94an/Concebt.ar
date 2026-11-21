@@ -107,6 +107,7 @@ private fun MafahimApp() {
     var renameLayerId by remember { mutableStateOf<String?>(null) }
     var renameLayerName by remember { mutableStateOf("") }
     var galleryDialog by remember { mutableStateOf(false) }
+    var artboardsDialog by remember { mutableStateOf(false) }
     var documentList by remember { mutableStateOf(emptyList<DocumentSummary>()) }
     val scope = rememberCoroutineScope()
     var imageBitmaps by remember { mutableStateOf<Map<String, ImageBitmap>>(emptyMap()) }
@@ -471,6 +472,17 @@ private fun MafahimApp() {
                                     }
                             ) {
                                 drawRect(Color(0xFFFCFCFA))
+                                document.artboards.filter { it.visible }.forEach { artboard ->
+                                    val topLeft = Offset(artboard.x * zoom + pan.x, artboard.y * zoom + pan.y)
+                                    val boardSize = Size(artboard.width * zoom, artboard.height * zoom)
+                                    drawRect(Color(artboard.backgroundColor), topLeft, boardSize)
+                                    drawRect(
+                                        color = if (document.activeArtboardId == artboard.id) Color(0xFF1976D2) else Color(0xFF9AA7B5),
+                                        topLeft = topLeft,
+                                        size = boardSize,
+                                        style = Stroke(width = if (document.activeArtboardId == artboard.id) 2.5f else 1f)
+                                    )
+                                }
                                 val spacing = 34f * zoom.coerceIn(0.2f, 8f)
                                 if (spacing >= 8f) {
                                     var gx = ((pan.x % spacing) + spacing) % spacing
@@ -666,7 +678,10 @@ private fun MafahimApp() {
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        TextButton(onClick = { layersDialog = true }) { Text("الطبقات (${document.layers.size})") }
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            TextButton(onClick = { layersDialog = true }) { Text("الطبقات (${document.layers.size})") }
+                            TextButton(onClick = { artboardsDialog = true }) { Text("اللوحات (${document.artboards.size})") }
+                        }
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             TextButton(onClick = { zoom = (zoom / 1.2f).coerceIn(0.25f, 5f) }) { Text("−") }
                             Text("${(zoom * 100).toInt()}%", fontSize = 11.sp)
@@ -765,6 +780,43 @@ private fun MafahimApp() {
                 }) { Text("إضافة طبقة") }
             },
             dismissButton = { TextButton(onClick = { layersDialog = false }) { Text("إغلاق") } }
+        )
+    }
+
+    if (artboardsDialog) {
+        AlertDialog(
+            onDismissRequest = { artboardsDialog = false },
+            title = { Text("إدارة اللوحات الفنية") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    if (document.artboards.isEmpty()) Text("لا توجد لوحات فنية بعد")
+                    document.artboards.forEach { artboard ->
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            RadioButton(
+                                selected = document.activeArtboardId == artboard.id,
+                                onClick = { applyDocument(document.copy(activeArtboardId = artboard.id)) }
+                            )
+                            Text(artboard.name, modifier = Modifier.weight(1f), maxLines = 1)
+                            Checkbox(
+                                checked = artboard.visible,
+                                onCheckedChange = { visible -> applyDocument(document.copy(artboards = document.artboards.map { if (it.id == artboard.id) it.copy(visible = visible) else it })) }
+                            )
+                            TextButton(onClick = {
+                                val remaining = document.artboards.filterNot { it.id == artboard.id }
+                                val active = if (document.activeArtboardId == artboard.id) remaining.firstOrNull()?.id else document.activeArtboardId
+                                applyDocument(document.copy(artboards = remaining, activeArtboardId = active))
+                            }) { Text("حذف") }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                Button(onClick = {
+                    val artboard = DrawingArtboard(UUID.randomUUID().toString(), "لوحة فنية ${document.artboards.size + 1}", 0f, 0f, 1000f, 1400f)
+                    applyDocument(document.copy(artboards = document.artboards + artboard, activeArtboardId = artboard.id))
+                }) { Text("إضافة لوحة") }
+            },
+            dismissButton = { TextButton(onClick = { artboardsDialog = false }) { Text("إغلاق") } }
         )
     }
 
