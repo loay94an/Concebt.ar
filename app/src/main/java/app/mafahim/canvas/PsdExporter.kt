@@ -2,6 +2,7 @@ package app.mafahim.canvas
 
 import android.content.Context
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.Path
@@ -52,7 +53,7 @@ object PsdExporter {
         imageCanvas.scale(scale, scale)
         document.images.forEach { image ->
             val file = File(context.filesDir, "images/${File(image.fileName).name}")
-            val bitmap = Bitmap.decodeFileCompat(file)
+            val bitmap = BitmapFactory.decodeFile(file.absolutePath)
             if (bitmap != null) {
                 val rect = RectF(image.x, image.y, image.x + image.width, image.y + image.height)
                 imageCanvas.save()
@@ -121,6 +122,4 @@ object PsdExporter {
         return bytes
     }
 
-    private fun File.decodeBitmap(): Bitmap? = android.graphics.BitmapFactory.decodeFile(absolutePath)
-    private fun Bitmap.Companion.decodeFileCompat(file: File): Bitmap? = android.graphics.BitmapFactory.decodeFile(file.absolutePath)
 }
