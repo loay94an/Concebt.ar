@@ -23,7 +23,7 @@ data class ImageEditState(
     val crop: ImageRect? = null,
     val rotationDegrees: Float = 0f
 ) {
-    val visibleBounds: ImageRect get() = crop?.let { bounds.intersect(it) } ?: bounds
+    val visibleBounds: ImageRect get() = crop ?: bounds
 
     fun move(dx: Float, dy: Float): ImageEditState {
         if (!dx.isFinite() || !dy.isFinite()) return this
@@ -44,7 +44,7 @@ data class ImageEditState(
 
     /** Crop is expressed in document coordinates and clipped to image bounds. */
     fun setCrop(requested: ImageRect?): ImageEditState =
-        copy(crop = requested?.let(bounds::intersect))
+        copy(crop = requested?.let { bounds.intersect(it) ?: ImageRect(bounds.left, bounds.top, bounds.left, bounds.top) })
 
     fun hitTest(x: Float, y: Float): Boolean = visibleBounds.contains(x, y)
 }
