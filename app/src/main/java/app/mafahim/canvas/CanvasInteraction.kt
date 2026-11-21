@@ -48,7 +48,7 @@ object CanvasSelectionEngine {
 
     /** Select the nearest visible object under a world-space point. Images take priority. */
     fun hitTest(document: DrawingDocument, x: Float, y: Float, tolerance: Float): CanvasSelection {
-        val visible = document.layers.filter { it.visible }.mapTo(hashSetOf()) { it.id }
+        val visible = document.layers.filter { it.visible && !it.locked }.mapTo(hashSetOf()) { it.id }
         val image = document.images.lastOrNull {
             x >= it.x - tolerance && y >= it.y - tolerance &&
                 x <= it.x + it.width + tolerance && y <= it.y + it.height + tolerance
