@@ -35,3 +35,19 @@ Actions → Static reverse engineering (private APK) → Run workflow.
 - JADX تحليل ثابت ولا يشغّل التطبيق.
 - لا يستطيع GitHub الوصول إلى ملف الهاتف قبل توفيره في المصدر الخاص.
 - الهدف استخلاص مواصفات السلوك وإعادة تنفيذ مستقلة، لا إعادة نشر الشيفرة أو الأصول التجارية.
+
+## تشغيل REA على APK Concepts الأصلي
+
+أضيف مسار مستقل:
+`.github/workflows/rea-concepts-analysis.yml`
+
+بعد تجهيز متغيرات المصدر الخاص والسر أعلاه، افتح:
+Actions → **REA analysis of original Concepts APK** → Run workflow.
+
+يشغّل المسار REA الرسمي على Ubuntu x64 مع Node.js 24 وJDK 21، ويستخدم JADX MCP المثبّت من fixture الرسمي، ثم ينفذ:
+- فحص حزمة APK.
+- البحث عن `Engine` و`Canvas` و`InputEventPacker`.
+- فحص صنفي `Engine` و`Canvas` والدالة `Engine.createCanvas`.
+- تتبع مراجع `Engine` و`NativeObject`.
+
+يُرفض الملف ما لم تطابق بصمة SHA-256 النسخة الأصلية المعروفة. لا تُنشر سجلات REA الخام أو ملفات JADX أو APK؛ يُنشر ملخص عربي منقح فقط. نجاح workflow يعني أن أوامر REA نُفذت على APK الأصلي، وليس أن كل المكتبات الأصلية JNI قد فُهمت أو أن التطبيق أُعيد بناؤه.
