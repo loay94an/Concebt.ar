@@ -10,7 +10,6 @@ import java.io.DataInputStream
 import java.io.DataOutputStream
 import java.io.File
 import java.io.FileInputStream
-import java.io.FileOutputStream
 import java.nio.file.AtomicMoveNotSupportedException
 import java.nio.file.Files
 import java.nio.file.StandardCopyOption
@@ -37,11 +36,14 @@ class DocumentRepository(context: Context) {
         val scaled = if (ratio < 1f) Bitmap.createScaledBitmap(bitmap,
             (bitmap.width * ratio).toInt().coerceAtLeast(1),
             (bitmap.height * ratio).toInt().coerceAtLeast(1), true) else bitmap
+        val imageWidth = scaled.width
+        val imageHeight = scaled.height
         val id = UUID.randomUUID().toString()
         val name = "$id.png"
         FileOutputStream(File(imagesDir, name)).use { scaled.compress(Bitmap.CompressFormat.PNG, 100, it) }
-        if (scaled !== bitmap) { scaled.recycle(); bitmap.recycle() }
-        DrawingImage(id, name, 60f, 60f, scaled.width.toFloat(), scaled.height.toFloat())
+        scaled.recycle()
+        if (scaled !== bitmap) bitmap.recycle()
+        DrawingImage(id, name, 60f, 60f, imageWidth.toFloat(), imageHeight.toFloat())
     }.getOrNull()
 
     fun loadImage(fileName: String): Bitmap? {
