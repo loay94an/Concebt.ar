@@ -61,8 +61,14 @@ jobs:
       - name: Decompile and inventory
         run: |
           set -euo pipefail
+          set +e
           "$RUNNER_TEMP/jadx/bin/jadx" --show-bad-code --no-res \
             -d "$RUNNER_TEMP/jadx-output" "$APK"
+          JADX_EXIT=$?
+          set -e
+          test -d "$RUNNER_TEMP/jadx-output/sources"
+          echo "JADX_EXIT=$JADX_EXIT" >> "$GITHUB_ENV"
+          echo "JADX returned $JADX_EXIT; continuing because partial source output is expected for obfuscated classes."
           python tools/reverse_engineering/deep_report.py \
             --apk "$APK" \
             --sources "$RUNNER_TEMP/jadx-output/sources" \
