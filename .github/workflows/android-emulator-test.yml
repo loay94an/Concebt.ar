@@ -19,8 +19,9 @@ permissions:
 
 jobs:
   emulator:
-    # Use a compact Android 11 image to reduce software-emulation boot cost on hosted Linux.
-    runs-on: ubuntu-24.04
+    # macOS hosted runners provide the hypervisor support needed by the Android emulator.
+    # Linux hosted runners repeatedly failed before ADB registered emulator-5554.
+    runs-on: macos-14
     timeout-minutes: 50
     steps:
       - uses: actions/checkout@v4
@@ -47,10 +48,12 @@ jobs:
           target: default
           arch: x86_64
           profile: pixel_2
-          emulator-boot-timeout: 600
+          emulator-boot-timeout: 900
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -memory 1536 -cores 2
           disable-animations: true
-          script: gradle connectedDebugAndroidTest --stacktrace
+          script: |
+            adb devices -l
+            gradle connectedDebugAndroidTest --stacktrace
 
       - name: Upload instrumentation reports
         if: always()
