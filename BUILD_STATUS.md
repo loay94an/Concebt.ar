@@ -27,8 +27,8 @@
 
 - الإصدار 0.3.0: اجتاز اختبارات الوحدة والبناء والتحقق من الحزمة والتوقيع.
 - الإصدار 0.4.0: نجحت اختبارات الوحدة والبناء والتحقق من package ID والتوقيع.
-- GitHub Actions run: [44931055351](https://github.com/loay94an/Concebt.ar/actions/runs/44931055351).
-- Artifact APK: `concepts-arabic-debug-apk`، الحجم 9,150,278 bytes.
+- GitHub Actions run: [44931147387](https://github.com/loay94an/Concebt.ar/actions/runs/44931055351).
+- Artifact APK: `concepts-arabic-debug-apk`، الحجم 9,150,283 bytes.
 - اختبار واجهة Android واختبار حفظ المستندات على المحاكي أُضيفا، وتشغيلهما قيد التحقق.
 - لم يُجر اختبار على جهاز مادي في هذه الجلسة.
 
