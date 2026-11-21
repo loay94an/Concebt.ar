@@ -208,9 +208,9 @@ private fun MafahimApp() {
     var previousSpan by remember { mutableStateOf(0f) }
 
     val palette = listOf(
-        0xFF20242D.toInt(), 0xFF265D97.toInt(), 0xFFCC4B4B.toInt(),
-        0xFF2D8A66.toInt(), 0xFFE1A33A.toInt(), 0xFF7C59A6.toInt(),
-        0xFF111111.toInt(), 0xFF777777.toInt()
+        0xFF20242D.toInt(), 0xFF8B5CF6.toInt(), 0xFFEC4899.toInt(), 0xFF06B6D4.toInt(),
+        0xFF10B981.toInt(), 0xFFF59E0B.toInt(), 0xFFEF4444.toInt(), 0xFF3B82F6.toInt(),
+        0xFF111111.toInt(), 0xFF777777.toInt(), 0xFFB8A7D9.toInt(), 0xFFFFFFFF.toInt()
     )
 
     // Cache deterministic brush geometry per document revision; the Canvas draw pass
@@ -233,15 +233,19 @@ private fun MafahimApp() {
 
     val colorScheme = if (darkMode) {
         darkColorScheme(
-            primary = Color(0xFF9AB8F0),
-            surface = Color(0xFF171A20),
-            background = Color(0xFF101318)
+            primary = Color(0xFFC4B5FD),
+            secondary = Color(0xFF67E8F9),
+            tertiary = Color(0xFFF9A8D4),
+            surface = Color(0xFF191722),
+            background = Color(0xFF101018)
         )
     } else {
         lightColorScheme(
-            primary = Color(0xFF315C87),
+            primary = Color(0xFF8B5CF6),
+            secondary = Color(0xFF06B6D4),
+            tertiary = Color(0xFFEC4899),
             surface = Color.White,
-            background = Color(0xFFF3F5F8)
+            background = Color(0xFFF4F2F8)
         )
     }
 
@@ -252,89 +256,82 @@ private fun MafahimApp() {
                     modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp, vertical = 10.dp),
                     verticalArrangement = Arrangement.spacedBy(9.dp)
                 ) {
-                    Row(
+                    Surface(
                         modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
+                        shape = RoundedCornerShape(22.dp),
+                        color = MaterialTheme.colorScheme.surface,
+                        shadowElevation = 2.dp
                     ) {
-                        Column {
-                            Text("مفاهيم", fontSize = 22.sp, fontWeight = FontWeight.Bold)
-                            Text("استوديو الرسم", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
-                        Row(verticalAlignment = Alignment.CenterVertically) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            Image(
+                                painter = androidx.compose.ui.res.painterResource(app.mafahim.canvas.R.drawable.ic_launcher_foreground),
+                                contentDescription = "شعار مفاهيم",
+                                modifier = Modifier.size(42.dp).clip(RoundedCornerShape(13.dp)).background(Color(0xFF8B5CF6))
+                            )
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text("مفاهيم", fontSize = 19.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                                Text("استوديو الرسم الإبداعي", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                            Surface(shape = RoundedCornerShape(12.dp), color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f)) {
+                                Text("لوحة العمل", modifier = Modifier.padding(horizontal = 11.dp, vertical = 8.dp), fontSize = 11.sp, fontWeight = FontWeight.Medium)
+                            }
                             TextButton(onClick = {
-                                if (undoStack.isNotEmpty()) {
-                                    redoStack.add(document)
-                                    document = undoStack.removeAt(undoStack.lastIndex)
-                                }
+                                if (undoStack.isNotEmpty()) { redoStack.add(document); document = undoStack.removeAt(undoStack.lastIndex) }
                             }, enabled = undoStack.isNotEmpty()) { Text("↶", fontSize = 22.sp) }
                             TextButton(onClick = {
-                                if (redoStack.isNotEmpty()) {
-                                    undoStack.add(document)
-                                    document = redoStack.removeAt(redoStack.lastIndex)
-                                }
+                                if (redoStack.isNotEmpty()) { undoStack.add(document); document = redoStack.removeAt(redoStack.lastIndex) }
                             }, enabled = redoStack.isNotEmpty()) { Text("↷", fontSize = 22.sp) }
-                            TextButton(onClick = { darkMode = !darkMode }) { Text(if (darkMode) "☀" else "☾") }
-                            TextButton(onClick = { documentList = repository.listDocuments(); galleryDialog = true }) { Text("المستندات") }
-                            TextButton(onClick = { imagePicker.launch(arrayOf("image/*")) }) { Text("صورة") }
-                            TextButton(onClick = {
-                                runCatching {
-                                    val uri = SvgExporter.export(context, document)
-                                    val shareIntent = Intent(Intent.ACTION_SEND).apply {
-                                        type = "image/svg+xml"
-                                        putExtra(Intent.EXTRA_STREAM, uri)
-                                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                                    }
-                                    context.startActivity(Intent.createChooser(shareIntent, "تصدير الرسم"))
-                                }.onFailure {
-                                    Toast.makeText(context, "تعذر تصدير الملف", Toast.LENGTH_SHORT).show()
-                                }
-                            }) { Text("SVG") }
-                            TextButton(onClick = {
-                                runCatching {
-                                    val uri = PdfExporter.export(context, document)
-                                    val shareIntent = Intent(Intent.ACTION_SEND).apply {
-                                        type = "application/pdf"
-                                        putExtra(Intent.EXTRA_STREAM, uri)
-                                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                                    }
-                                    context.startActivity(Intent.createChooser(shareIntent, "تصدير PDF"))
-                                }.onFailure {
-                                    Toast.makeText(context, "تعذر إنشاء PDF", Toast.LENGTH_SHORT).show()
-                                }
-                            }) { Text("PDF") }
-                            TextButton(onClick = {
-                                runCatching {
-                                    val uri = PsdExporter.export(context, document)
-                                    val shareIntent = Intent(Intent.ACTION_SEND).apply {
-                                        type = "image/vnd.adobe.photoshop"
-                                        putExtra(Intent.EXTRA_STREAM, uri)
-                                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                                    }
-                                    context.startActivity(Intent.createChooser(shareIntent, "تصدير PSD بطبقات"))
-                                }.onFailure {
-                                    Toast.makeText(context, it.message ?: "تعذر إنشاء PSD", Toast.LENGTH_LONG).show()
-                                }
-                            }) { Text("PSD") }
-                            TextButton(onClick = {
-                                runCatching {
-                                    val uri = DxfExporter.export(context, document)
-                                    val shareIntent = Intent(Intent.ACTION_SEND).apply {
-                                        type = "application/dxf"
-                                        putExtra(Intent.EXTRA_STREAM, uri)
-                                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                                    }
-                                    context.startActivity(Intent.createChooser(shareIntent, "تصدير DXF"))
-                                }.onFailure {
-                                    Toast.makeText(context, "تعذر إنشاء DXF", Toast.LENGTH_SHORT).show()
-                                }
-                            }) { Text("DXF") }
+                            TextButton(onClick = { darkMode = !darkMode }) { Text(if (darkMode) "☀" else "☾", fontSize = 18.sp) }
+                            TextButton(onClick = { documentList = repository.listDocuments(); galleryDialog = true }) { Text("ملفاتي", fontSize = 11.sp) }
                         }
+                    }
+                    Row(
+                        modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(7.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        TextButton(onClick = { imagePicker.launch(arrayOf("image/*")) }) { Text("＋ صورة") }
+                        TextButton(onClick = { layersDialog = true }) { Text("▤ الطبقات") }
+                        TextButton(onClick = { pagesDialog = true }) { Text("▧ الصفحات") }
+                        TextButton(onClick = { artboardsDialog = true }) { Text("▦ اللوحات") }
+                        TextButton(onClick = {
+                            runCatching {
+                                val uri = SvgExporter.export(context, document)
+                                val shareIntent = Intent(Intent.ACTION_SEND).apply { type = "image/svg+xml"; putExtra(Intent.EXTRA_STREAM, uri); addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION) }
+                                context.startActivity(Intent.createChooser(shareIntent, "تصدير SVG"))
+                            }.onFailure { Toast.makeText(context, "تعذر تصدير SVG", Toast.LENGTH_SHORT).show() }
+                        }) { Text("⇧ SVG") }
+                        TextButton(onClick = {
+                            runCatching {
+                                val uri = PdfExporter.export(context, document)
+                                val shareIntent = Intent(Intent.ACTION_SEND).apply { type = "application/pdf"; putExtra(Intent.EXTRA_STREAM, uri); addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION) }
+                                context.startActivity(Intent.createChooser(shareIntent, "تصدير PDF"))
+                            }.onFailure { Toast.makeText(context, "تعذر إنشاء PDF", Toast.LENGTH_SHORT).show() }
+                        }) { Text("⇧ PDF") }
+                        TextButton(onClick = {
+                            runCatching {
+                                val uri = PsdExporter.export(context, document)
+                                val shareIntent = Intent(Intent.ACTION_SEND).apply { type = "image/vnd.adobe.photoshop"; putExtra(Intent.EXTRA_STREAM, uri); addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION) }
+                                context.startActivity(Intent.createChooser(shareIntent, "تصدير PSD"))
+                            }.onFailure { Toast.makeText(context, it.message ?: "تعذر إنشاء PSD", Toast.LENGTH_LONG).show() }
+                        }) { Text("⇧ PSD") }
+                        TextButton(onClick = {
+                            runCatching {
+                                val uri = DxfExporter.export(context, document)
+                                val shareIntent = Intent(Intent.ACTION_SEND).apply { type = "application/dxf"; putExtra(Intent.EXTRA_STREAM, uri); addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION) }
+                                context.startActivity(Intent.createChooser(shareIntent, "تصدير DXF"))
+                            }.onFailure { Toast.makeText(context, "تعذر إنشاء DXF", Toast.LENGTH_SHORT).show() }
+                        }) { Text("⇧ DXF") }
                     }
 
                     Card(
                         modifier = Modifier.fillMaxWidth().weight(1f),
-                        shape = RoundedCornerShape(22.dp)
+                        shape = RoundedCornerShape(24.dp),
+                        elevation = androidx.compose.material3.CardDefaults.cardElevation(defaultElevation = 3.dp)
                     ) {
                         Box(modifier = Modifier.fillMaxSize().padding(4.dp)) {
                             Canvas(
