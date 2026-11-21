@@ -218,61 +218,128 @@ private fun MafahimApp() {
                             Canvas(
                                 modifier = Modifier.fillMaxSize()
                                     .clip(RoundedCornerShape(18.dp))
-                                    .pointerInput(selectedTool) {
-                                        awaitEachGesture {
-                                            val down = awaitFirstDown(requireUnconsumed = false)
-                                            if (selectedTool == BrushTool.MOVE) {
-                                                var previous = down.position
-                                                while (true) {
-                                                    val event = awaitPointerEvent()
-                                                    val change = event.changes.firstOrNull { it.id == down.id } ?: break
-                                                    if (!change.pressed) break
-                                                    val delta = change.position - previous
-                                                    setPanNow(currentPan + delta)
-                                                    previous = change.position
-                                                    change.consume()
-                                                }
-                                            } else {
-                                                val startPan = currentPan
-                                                val startZoom = currentZoom
-                                                val points = mutableListOf(
-                                                    CanvasGeometry.toWorld(
-                                                        CanvasPoint(down.position.x, down.position.y, CanvasGeometry.normalizedPressure(down.pressure)),
-                                                        startZoom, startPan.x, startPan.y
-                                                    )
+                                    .pointerInteropFilter { event ->
+                                        fun pointAt(index: Int): CanvasPoint {
+                                            val raw = CanvasPoint(
+                                                event.getX(index),
+                                                event.getY(index),
+                                                CanvasGeometry.normalizedPressure(event.getPressure(index)),
+                                                CanvasGeometry.normalizedTilt(event.getAxisValue(MotionEvent.AXIS_TILT, index)),
+                                                CanvasGeometry.normalizedOrientation(event.getAxisValue(MotionEvent.AXIS_ORIENTATION, index))
+                                            )
+                                            return CanvasGeometry.toWorld(raw, currentZoom, currentPan.x, currentPan.y)
+                                        }
+                                        fun centroid(): Offset {
+                                            var x = 0f
+                                            var y = 0f
+                                            for (i in 0 until event.pointerCount) {
+                                                x += event.getX(i)
+                                                y += event.getY(i)
+                                            }
+                                            return Offset(x / event.pointerCount, y / event.pointerCount)
+                                        }
+                                        fun span(center: Offset): Float {
+                                            if (event.pointerCount < 2) return 0f
+                                            var sum = 0f
+                                            for (i in 0 until event.pointerCount) {
+                                                val dx = event.getX(i) - center.x
+                                                val dy = event.getY(i) - center.y
+                                                sum += dx * dx + dy * dy
+                                            }
+                                            return kotlin.math.sqrt(sum / event.pointerCount)
+                                        }
+                                        fun appendSamples() {
+                                            val index = 0
+                                            for (h in 0 until event.historySize) {
+                                                val sample = CanvasPoint(
+                                                    event.getHistoricalX(index, h),
+                                                    event.getHistoricalY(index, h),
+                                                    CanvasGeometry.normalizedPressure(event.getHistoricalPressure(index, h)),
+                                                    CanvasGeometry.normalizedTilt(event.getHistoricalAxisValue(MotionEvent.AXIS_TILT, index, h)),
+                                                    CanvasGeometry.normalizedOrientation(event.getHistoricalAxisValue(MotionEvent.AXIS_ORIENTATION, index, h))
                                                 )
-                                                while (true) {
-                                                    val event = awaitPointerEvent()
-                                                    val change = event.changes.firstOrNull { it.id == down.id } ?: break
-                                                    if (!change.pressed) break
-                                                    points.add(
-                                                        CanvasGeometry.toWorld(
-                                                            CanvasPoint(change.position.x, change.position.y, CanvasGeometry.normalizedPressure(change.pressure)),
-                                                            startZoom, startPan.x, startPan.y
+                                                gesturePoints.add(CanvasGeometry.toWorld(sample, currentZoom, currentPan.x, currentPan.y))
+                                            }
+                                            gesturePoints.add(pointAt(index))
+                                        }
+                                        when (event.actionMasked) {
+                                            MotionEvent.ACTION_DOWN -> {
+                                                gesturePoints.clear()
+                                                activeTool = currentTool
+                                                drawingGesture = activeTool != BrushTool.MOVE
+                                                panningGesture = activeTool == BrushTool.MOVE
+                                                previousCentroid = Offset(event.x, event.y)
+                                                previousSpan = 0f
+                                                if (drawingGesture) appendSamples()
+                                            }
+                                            MotionEvent.ACTION_POINTER_DOWN -> {
+                                                drawingGesture = false
+                                                panningGesture = false
+                                                gesturePoints.clear()
+                                                previousCentroid = centroid()
+                                                previousSpan = span(previousCentroid)
+                                            }
+                                            MotionEvent.ACTION_MOVE -> {
+                                                if (event.pointerCount >= 2) {
+                                                    val center = centroid()
+                                                    val nextSpan = span(center)
+                                                    if (previousSpan > 0f && nextSpan > 0f) {
+                                                        val oldZoom = currentZoom
+                                                        val nextZoom = (oldZoom * (nextSpan / previousSpan)).coerceIn(0.2f, 8f)
+                                                        val nextPan = Offset(
+                                                            center.x - (previousCentroid.x - currentPan.x) * (nextZoom / oldZoom),
+                                                            center.y - (previousCentroid.y - currentPan.y) * (nextZoom / oldZoom)
+                                                        )
+                                                        setViewNow(nextZoom, nextPan)
+                                                    }
+                                                    previousCentroid = center
+                                                    previousSpan = nextSpan
+                                                } else if (panningGesture) {
+                                                    val position = Offset(event.x, event.y)
+                                                    setPanNow(currentPan + (position - previousCentroid))
+                                                    previousCentroid = position
+                                                } else if (drawingGesture) {
+                                                    appendSamples()
+                                                }
+                                            }
+                                            MotionEvent.ACTION_POINTER_UP -> {
+                                                previousSpan = 0f
+                                                previousCentroid = Offset(event.x, event.y)
+                                            }
+                                            MotionEvent.ACTION_UP -> {
+                                                if (drawingGesture && gesturePoints.isNotEmpty()) {
+                                                    val tool = activeTool
+                                                    val color = if (tool == BrushTool.ERASER) Color.White.toArgb() else currentColor
+                                                    val opacity = when (tool) {
+                                                        BrushTool.MARKER -> 0.28f
+                                                        BrushTool.PENCIL -> 0.72f
+                                                        else -> 1f
+                                                    }
+                                                    addStrokeNow(
+                                                        DrawStroke(
+                                                            id = UUID.randomUUID().toString(),
+                                                            layerId = currentLayer,
+                                                            tool = tool,
+                                                            color = color,
+                                                            width = if (tool == BrushTool.ERASER) currentWidth * 3f else currentWidth,
+                                                            opacity = opacity,
+                                                            points = CanvasGeometry.smooth(gesturePoints.toList())
                                                         )
                                                     )
-                                                    change.consume()
                                                 }
-                                                val tool = selectedTool
-                                                val color = if (tool == BrushTool.ERASER) Color.White.toArgb() else currentColor
-                                                val opacity = when (tool) {
-                                                    BrushTool.MARKER -> 0.28f
-                                                    BrushTool.PENCIL -> 0.72f
-                                                    else -> 1f
-                                                }
-                                                addStrokeNow(
-                                                    DrawStroke(
-                                                        id = UUID.randomUUID().toString(),
-                                                        layerId = currentLayer,
-                                                        tool = tool,
-                                                        color = color,
-                                                        width = if (tool == BrushTool.ERASER) currentWidth * 3f else currentWidth,
-                                                        opacity = opacity,
-                                                        points = points
-                                                    )
-                                                )
+                                                gesturePoints.clear()
+                                                drawingGesture = false
+                                                panningGesture = false
+                                                previousSpan = 0f
+                                            }
+                                            MotionEvent.ACTION_CANCEL -> {
+                                                gesturePoints.clear()
+                                                drawingGesture = false
+                                                panningGesture = false
+                                                previousSpan = 0f
                                             }
                                         }
+                                        true
                                     }
                             ) {
                                 drawRect(Color(0xFFFCFCFA))
@@ -299,7 +366,7 @@ private fun MafahimApp() {
                                     )
                                     val mapped = stroke.points.map { Offset(it.x * zoom + pan.x, it.y * zoom + pan.y) }
                                     if (mapped.size == 1) {
-                                        val pressure = stroke.points.first().pressure.coerceIn(0.05f, 1f)
+                                        val pressure = CanvasGeometry.pressureTiltWidth(stroke.points.first(), 1f)
                                         drawCircle(
                                             color,
                                             radius = (stroke.width * pressure * zoom / 2f).coerceAtLeast(0.5f),
@@ -307,7 +374,7 @@ private fun MafahimApp() {
                                         )
                                     } else {
                                         stroke.points.zipWithNext().forEachIndexed { index, pair ->
-                                            val pressure = ((pair.first.pressure + pair.second.pressure) / 2f).coerceIn(0.05f, 1f)
+                                            val pressure = (CanvasGeometry.pressureTiltWidth(pair.first, 1f) + CanvasGeometry.pressureTiltWidth(pair.second, 1f)) / 2f
                                             drawLine(
                                                 color = color,
                                                 start = mapped[index],
