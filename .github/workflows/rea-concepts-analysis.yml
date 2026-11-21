@@ -1,0 +1,174 @@
+name: REA analysis of original Concepts APK
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/rea-concepts-analysis.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: rea-concepts-original
+  cancel-in-progress: false
+
+jobs:
+  analyze:
+    name: Analyze original Concepts APK with REA + JADX
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout Concebt.ar
+        uses: actions/checkout@v4
+
+      - name: Validate private APK source
+        env:
+          APK_SOURCE_REPO: ${{ vars.APK_SOURCE_REPO }}
+          APK_RELEASE_TAG: ${{ vars.APK_RELEASE_TAG }}
+          APK_ASSET_NAME: ${{ vars.APK_ASSET_NAME }}
+          APK_SOURCE_TOKEN: ${{ secrets.APK_SOURCE_TOKEN }}
+        run: |
+          set -euo pipefail
+          test -n "$APK_SOURCE_REPO" || { echo "::error::Missing repository variable APK_SOURCE_REPO"; exit 1; }
+          test -n "$APK_RELEASE_TAG" || { echo "::error::Missing repository variable APK_RELEASE_TAG"; exit 1; }
+          test -n "$APK_ASSET_NAME" || { echo "::error::Missing repository variable APK_ASSET_NAME"; exit 1; }
+          test -n "$APK_SOURCE_TOKEN" || { echo "::error::Missing repository secret APK_SOURCE_TOKEN"; exit 1; }
+
+      - name: Download original APK and verify identity
+        env:
+          GH_TOKEN: ${{ secrets.APK_SOURCE_TOKEN }}
+          APK_SOURCE_REPO: ${{ vars.APK_SOURCE_REPO }}
+          APK_RELEASE_TAG: ${{ vars.APK_RELEASE_TAG }}
+          APK_ASSET_NAME: ${{ vars.APK_ASSET_NAME }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/private-input"
+          gh release download "$APK_RELEASE_TAG" --repo "$APK_SOURCE_REPO" --pattern "$APK_ASSET_NAME" --dir "$RUNNER_TEMP/private-input"
+          APK="$RUNNER_TEMP/private-input/$APK_ASSET_NAME"
+          test -s "$APK"
+          ACTUAL="$(sha256sum "$APK" | awk '{print $1}')"
+          EXPECTED="47e4e5244f2e2284349888a3fad00f407c1f0503429ec3d0e469f24924a98fdf"
+          test "$ACTUAL" = "$EXPECTED" || { echo "::error::Original Concepts APK SHA-256 mismatch"; exit 1; }
+          echo "CONCEPTS_APK=$APK" >> "$GITHUB_ENV"
+          echo "Verified original Concepts APK SHA-256: $ACTUAL"
+
+      - name: Checkout official REA source
+        uses: actions/checkout@v4
+        with:
+          repository: morluto/rea
+          ref: main
+          path: rea-source
+          submodules: recursive
+
+      - name: Install Node.js and full JDK
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24.22.1'
+          cache: npm
+          cache-dependency-path: rea-source/package-lock.json
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Install REA and official JADX MCP fixture
+        working-directory: rea-source
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y procps unzip
+          npm ci
+          npm run build:cached
+          npm run fixtures:android
+          JAR="$GITHUB_WORKSPACE/rea-source/_reference/apk-integration/jadx-headless-mcp-0.7.1-all.jar"
+          test -s "$JAR"
+          echo "REA_JADX_MCP_JAR=$JAR" >> "$GITHUB_ENV"
+          java --list-modules | grep -q 'jdk.compiler'
+          node scripts/rea.mjs --help
+
+      - name: Verify REA JADX provider
+        working-directory: rea-source
+        run: |
+          set -euo pipefail
+          node scripts/rea.mjs doctor --provider jadx --json
+
+      - name: Run REA package, class, method and reference analysis
+        working-directory: rea-source
+        env:
+          REA_JADX_MCP_JAR: ${{ env.REA_JADX_MCP_JAR }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/rea-evidence"
+          APK="$CONCEPTS_APK"
+          node scripts/rea.mjs inspect-android-package "$APK" > "$RUNNER_TEMP/rea-evidence/package.txt" 2>&1
+          node scripts/rea.mjs search-android-classes "$APK" 'com.tophatch.concepts.core.Engine' > "$RUNNER_TEMP/rea-evidence/engine-search.txt" 2>&1
+          node scripts/rea.mjs search-android-classes "$APK" 'com.tophatch.concepts.core.Canvas' > "$RUNNER_TEMP/rea-evidence/canvas-search.txt" 2>&1
+          node scripts/rea.mjs search-android-classes "$APK" 'com.tophatch.concepts.core.InputEventPacker' > "$RUNNER_TEMP/rea-evidence/input-search.txt" 2>&1
+          node scripts/rea.mjs inspect-android-class "$APK" 'com.tophatch.concepts.core.Engine' > "$RUNNER_TEMP/rea-evidence/engine-class.txt" 2>&1
+          node scripts/rea.mjs inspect-android-class "$APK" 'com.tophatch.concepts.core.Canvas' > "$RUNNER_TEMP/rea-evidence/canvas-class.txt" 2>&1
+          node scripts/rea.mjs inspect-android-method "$APK" 'com.tophatch.concepts.core.Engine' 'createCanvas' > "$RUNNER_TEMP/rea-evidence/create-canvas-method.txt" 2>&1
+          node scripts/rea.mjs trace-android-references "$APK" 'com.tophatch.concepts.core.Engine' > "$RUNNER_TEMP/rea-evidence/engine-references.txt" 2>&1
+          node scripts/rea.mjs trace-android-references "$APK" 'com.tophatch.concepts.core.NativeObject' > "$RUNNER_TEMP/rea-evidence/native-object-references.txt" 2>&1
+          echo "REA_COMMANDS_COMPLETED=true" >> "$GITHUB_ENV"
+
+      - name: Generate sanitized Arabic analysis report
+        if: always()
+        env:
+          JOB_STATUS: ${{ job.status }}
+        run: |
+          set -euo pipefail
+          mkdir -p reverse-engineering
+          {
+            echo '# تقرير REA على Concepts الأصلي'
+            echo
+            echo "- تاريخ التشغيل: $(date -u '+%Y-%m-%d %H:%M UTC')"
+            echo "- نتيجة المهمة: $JOB_STATUS"
+            echo "- بصمة APK المعتمدة: `47e4e5244f2e2284349888a3fad00f407c1f0503429ec3d0e469f24924a98fdf`"
+            echo "- الحزمة المتوقعة: `com.tophatch.concepts`"
+            echo "- الإصدار المتوقع: `2022.04.10` (versionCode `220600201`)"
+            echo
+            echo '## نطاق الفحص'
+            echo '- REA Android package inspection'
+            echo '- البحث عن Engine وCanvas وInputEventPacker'
+            echo '- فحص Engine وCanvas وEngine.createCanvas'
+            echo '- تتبع مراجع Engine وNativeObject'
+            echo
+            if [ -d "$RUNNER_TEMP/rea-evidence" ]; then
+              echo '## أوامر REA التي اكتملت'
+              for f in "$RUNNER_TEMP"/rea-evidence/*.txt; do
+                [ -f "$f" ] || continue
+                echo "- $(basename "$f" .txt): تم إنشاء سجل الفحص"
+              done
+            else
+              echo 'لم يبدأ جمع أدلة REA؛ راجع سبب فشل خطوة الإعداد أو التحقق.'
+            fi
+            echo
+            echo '## الخصوصية والحدود'
+            echo '- لا تُنشر ملفات APK أو ملفات Java المفكوكة أو سجلات REA الخام.'
+            echo '- هذا التقرير ملخص تشغيل؛ الاستنتاجات التقنية النهائية تتطلب مراجعة الأدلة الخام داخل بيئة خاصة.'
+            echo '- فحص المكتبات الأصلية JNI/NDK لا يُعد مكتملاً بمجرد نجاح فحص Java.'
+          } > reverse-engineering/REA_CONCEPTS_ORIGINAL_REPORT_AR.md
+
+      - name: Commit sanitized report only
+        if: always()
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add reverse-engineering/REA_CONCEPTS_ORIGINAL_REPORT_AR.md
+          if ! git diff --cached --quiet; then
+            git commit -m "docs: add REA analysis report for original Concepts APK"
+            git push
+          fi
+
+      - name: Upload sanitized report only
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rea-concepts-original-sanitized-report
+          path: reverse-engineering/REA_CONCEPTS_ORIGINAL_REPORT_AR.md
+          if-no-files-found: warn
+          retention-days: 30
