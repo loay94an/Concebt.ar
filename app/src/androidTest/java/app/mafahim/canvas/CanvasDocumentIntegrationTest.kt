@@ -21,7 +21,9 @@ class CanvasDocumentIntegrationTest {
             strokes = listOf(DrawStroke("stroke-1", "layer-1", BrushTool.CHISEL, -1, 12f, 0.8f,
                 listOf(CanvasPoint(1f, 2f, 0.4f, 0.8f, 0.3f), CanvasPoint(8f, 9f, 0.9f, 0.2f, 1.1f)))),
             images = listOf(DrawingImage("image-1", "image.png", 12f, 13f, 90f, 45f, 27f)),
-            guides = listOf(ShapeGuide("guide-1", ShapeGuideType.PERPENDICULAR, CanvasPoint(5f, 6f), 30f, 24f, true))
+            guides = listOf(ShapeGuide("guide-1", ShapeGuideType.PERPENDICULAR, CanvasPoint(5f, 6f), 30f, 24f, true)),
+            artboards = listOf(DrawingArtboard("board-1", "صفحة A4", -10f, -20f, 210f, 297f)),
+            activeArtboardId = "board-1"
         )
         repository.save(document)
         val restored = repository.load(id)
