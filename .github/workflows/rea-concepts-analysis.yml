@@ -1,10 +1,6 @@
 name: REA analysis of original Concepts APK
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - '.github/workflows/rea-concepts-analysis.yml'
   workflow_dispatch:
 
 permissions:
@@ -23,30 +19,17 @@ jobs:
       - name: Checkout Concebt.ar
         uses: actions/checkout@v4
 
-      - name: Validate private APK source
+      - name: Download Concepts APK from this repository release
         env:
-          APK_SOURCE_REPO: ${{ vars.APK_SOURCE_REPO }}
-          APK_RELEASE_TAG: ${{ vars.APK_RELEASE_TAG }}
-          APK_ASSET_NAME: ${{ vars.APK_ASSET_NAME }}
-          APK_SOURCE_TOKEN: ${{ secrets.APK_SOURCE_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          test -n "$APK_SOURCE_REPO" || { echo "::error::Missing repository variable APK_SOURCE_REPO"; exit 1; }
-          test -n "$APK_RELEASE_TAG" || { echo "::error::Missing repository variable APK_RELEASE_TAG"; exit 1; }
-          test -n "$APK_ASSET_NAME" || { echo "::error::Missing repository variable APK_ASSET_NAME"; exit 1; }
-          test -n "$APK_SOURCE_TOKEN" || { echo "::error::Missing repository secret APK_SOURCE_TOKEN"; exit 1; }
-
-      - name: Download original APK and verify identity
-        env:
-          GH_TOKEN: ${{ secrets.APK_SOURCE_TOKEN }}
-          APK_SOURCE_REPO: ${{ vars.APK_SOURCE_REPO }}
-          APK_RELEASE_TAG: ${{ vars.APK_RELEASE_TAG }}
-          APK_ASSET_NAME: ${{ vars.APK_ASSET_NAME }}
-        run: |
-          set -euo pipefail
+          SOURCE_REPO="$GITHUB_REPOSITORY"
+          RELEASE_TAG="concepts-original-2022.04.10"
+          ASSET_NAME="Concepts 2022.04.10.apk"
           mkdir -p "$RUNNER_TEMP/private-input"
-          gh release download "$APK_RELEASE_TAG" --repo "$APK_SOURCE_REPO" --pattern "$APK_ASSET_NAME" --dir "$RUNNER_TEMP/private-input"
-          APK="$RUNNER_TEMP/private-input/$APK_ASSET_NAME"
+          gh release download "$RELEASE_TAG" --repo "$SOURCE_REPO" --pattern "$ASSET_NAME" --dir "$RUNNER_TEMP/private-input"
+          APK="$RUNNER_TEMP/private-input/$ASSET_NAME"
           test -s "$APK"
           ACTUAL="$(sha256sum "$APK" | awk '{print $1}')"
           EXPECTED="47e4e5244f2e2284349888a3fad00f407c1f0503429ec3d0e469f24924a98fdf"
