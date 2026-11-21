@@ -28,6 +28,18 @@ class SvgExporterTest {
     }
 
     @Test
+    fun exportsPressureSensitiveSegmentsWithVariableWidths() {
+        val document = DrawingDocument("ضغط", listOf(DrawingLayer("layer-1", "الطبقة")),
+            listOf(DrawStroke("pressure", "layer-1", BrushTool.PEN, 0xFF000000.toInt(),
+                10f, 1f, listOf(CanvasPoint(0f, 0f, 0.2f), CanvasPoint(20f, 0f, 1f)))))
+
+        val svg = SvgExporter.buildSvg(document)
+
+        assertTrue(svg.contains("<line"))
+        assertTrue(svg.contains("stroke-width=\"6.0\""))
+    }
+
+    @Test
     fun hiddenLayerIsNotExported() {
         val document = DrawingDocument("طبقات", listOf(DrawingLayer("layer-1", "مخفية", visible = false)),
             listOf(DrawStroke("hidden", "layer-1", BrushTool.PEN, -1, 4f, 1f,
