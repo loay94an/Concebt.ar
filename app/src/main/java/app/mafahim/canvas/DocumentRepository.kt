@@ -73,6 +73,7 @@ class DocumentRepository(context: Context) {
                 output.writeUTF(layer.name.take(MAX_TEXT))
                 output.writeBoolean(layer.visible)
                 output.writeFloat(layer.opacity.finiteOr(1f).coerceIn(0f, 1f))
+                output.writeBoolean(layer.locked)
             }
             output.writeInt(strokes.size)
             strokes.forEach { stroke ->
@@ -161,7 +162,8 @@ class DocumentRepository(context: Context) {
                     val name = input.readUTF()
                     val visible = input.readBoolean()
                     val opacity = input.readFloat().finiteOr(1f).coerceIn(0f, 1f)
-                    DrawingLayer(id, name, visible, opacity)
+                    val locked = if (formatVersion >= 8) input.readBoolean() else false
+                    DrawingLayer(id, name, visible, opacity, locked)
                 }
                 val strokeCount = input.readInt()
                 require(strokeCount in 0..MAX_STROKES) { "عدد الخطوط غير صالح" }
@@ -227,7 +229,7 @@ class DocumentRepository(context: Context) {
 
     companion object {
         private const val MAGIC = 0x4D464D31
-        private const val FORMAT_VERSION = 7
+        private const val FORMAT_VERSION = 8
         private const val MAX_TEXT = 256
         private const val MAX_LAYERS = 128
         private const val MAX_STROKES = 100_000
