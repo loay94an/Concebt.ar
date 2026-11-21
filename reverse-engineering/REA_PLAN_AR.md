@@ -10,7 +10,7 @@
 - SHA-256: `47e4e5244f2e2284349888a3fad00f407c1f0503429ec3d0e469f24924a98fdf`
 - مساحة الاسم المرصودة من DEX: `com.tophatch.concepts`
 - الحجم: 139,091,564 bytes
-- الحالة: لم يُشغّل REA على هذه العينة في بيئة الإنشاء الحالية. الاستطلاع السابق كان ZIP/DEX/assets فقط؛ لا تعامل أسماء الفئات كإثبات لسلوك التشغيل.
+- الحالة: نجح REA على هذه العينة بتاريخ 2026-11-21. نُفذت أوامر فحص الحزمة والبحث عن Engine/Canvas/InputEventPacker وفحص Engine/Canvas/Engine.createCanvas وتتبع مراجع Engine/NativeObject. التقرير المنشور: [REA_CONCEPTS_ORIGINAL_REPORT_AR.md](REA_CONCEPTS_ORIGINAL_REPORT_AR.md).
 
 ## تجهيز REA على جهاز تحليل
 
@@ -46,4 +46,7 @@ rea doctor --provider jadx --json
 
 ## سجل نتائج REA
 
-أضف النتائج هنا بعد تنفيذ REA الحقيقي، مع التاريخ وإصدار REA وبصمة العينة ومخرجات الأدوات. لا تكتب "تم التحليل" ما لم تتوفر الأدلة.
+- 2026-11-21: اكتمل تشغيل REA رقم 3 بنجاح على العينة ذات البصمة المطابقة.
+- اجتازت خطوات التحقق من موفر JADX وفحص الحزمة والأصناف والطرائق والمراجع.
+- التقرير المنقح: [REA_CONCEPTS_ORIGINAL_REPORT_AR.md](REA_CONCEPTS_ORIGINAL_REPORT_AR.md).
+- أُضيف workflow مستقل لـ JADX CLI لجرد مكتبات ABI وتصريحات native ومؤشرات MotionEvent. لا تزال نتيجة هذا المسار منفصلة عن تشغيل REA الأول.
