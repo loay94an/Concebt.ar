@@ -1,0 +1,100 @@
+name: REA Android provider verification
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/rea-android-smoke.yml'
+      - 'reverse-engineering/REA_PLAN_AR.md'
+  workflow_dispatch:
+  schedule:
+    - cron: '15 3 * * 1'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: rea-android-provider
+  cancel-in-progress: false
+
+jobs:
+  verify-rea:
+    name: Run real REA + JADX Android integration
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    steps:
+      - name: Checkout REA official source and pinned submodules
+        uses: actions/checkout@v4
+        with:
+          repository: morluto/rea
+          ref: main
+          path: rea-source
+          submodules: recursive
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24.22.1'
+          cache: npm
+          cache-dependency-path: rea-source/package-lock.json
+
+      - name: Set up full JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Install Linux process tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y procps unzip
+
+      - name: Install REA dependencies and build launcher
+        working-directory: rea-source
+        run: |
+          set -euo pipefail
+          npm ci
+          npm run build:cached
+          node scripts/rea.mjs --help >/dev/null
+
+      - name: Download official pinned Android fixtures
+        working-directory: rea-source
+        run: npm run fixtures:android
+
+      - name: Run REA real Android CLI and MCP integration verification
+        working-directory: rea-source
+        env:
+          REA_JADX_MCP_JAR: ${{ github.workspace }}/rea-source/_reference/apk-integration/jadx-headless-mcp-0.7.1-all.jar
+          REA_ANDROID_TEST_APK: ${{ github.workspace }}/rea-source/_reference/apk-integration/ApiDemos-debug.apk
+          JAVA_HOME: ${{ env.JAVA_HOME }}
+        run: |
+          set -euo pipefail
+          test -s "$REA_JADX_MCP_JAR"
+          test -s "$REA_ANDROID_TEST_APK"
+          java --list-modules | grep -q 'jdk.compiler'
+          node scripts/rea.mjs doctor --provider jadx --json
+          npm run verify:android
+
+      - name: Publish verification summary
+        if: always()
+        run: |
+          {
+            echo '# REA Android verification'
+            echo
+            echo "- REA source: `morluto/rea@main`"
+            echo "- Host: GitHub Actions Ubuntu x64"
+            echo "- Java: OpenJDK 21"
+            echo "- Fixture: official Appium ApiDemos Android APK"
+            echo "- Workflow result: ${{ job.status }}"
+            echo
+            echo 'This verifies REA against its public integration fixture. It does not analyze the private Concepts APK.'
+          } > "$RUNNER_TEMP/REA_VERIFICATION.md"
+
+      - name: Upload verification summary only
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rea-android-verification-summary
+          path: ${{ runner.temp }}/REA_VERIFICATION.md
+          if-no-files-found: warn
+          retention-days: 14
