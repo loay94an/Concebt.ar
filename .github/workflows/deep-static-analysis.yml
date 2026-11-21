@@ -6,6 +6,7 @@ on:
     paths:
       - '.github/workflows/deep-static-analysis.yml'
       - 'tools/reverse_engineering/deep_report.py'
+      - 'tools/reverse_engineering/native_report.py'
   workflow_dispatch:
 
 permissions:
@@ -72,6 +73,10 @@ jobs:
           python tools/reverse_engineering/deep_report.py \
             --apk "$APK" \
             --sources "$RUNNER_TEMP/jadx-output/sources" \
+            --output reverse-engineering/CONCEPTS_DEEP_STATIC_REPORT_AR.md
+          test -s reverse-engineering/CONCEPTS_DEEP_STATIC_REPORT_AR.md
+          python tools/reverse_engineering/native_report.py \\
+            --apk "$APK" \\
             --output reverse-engineering/CONCEPTS_DEEP_STATIC_REPORT_AR.md
           test -s reverse-engineering/CONCEPTS_DEEP_STATIC_REPORT_AR.md
 
