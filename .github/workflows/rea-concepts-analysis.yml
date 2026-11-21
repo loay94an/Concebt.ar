@@ -19,14 +19,15 @@ jobs:
       - name: Checkout Concebt.ar
         uses: actions/checkout@v4
 
-      - name: Download Concepts APK from this repository release
+      - name: Download APK from the private reference repository and verify SHA-256
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.APK_SOURCE_TOKEN }}
         run: |
           set -euo pipefail
-          SOURCE_REPO="$GITHUB_REPOSITORY"
+          SOURCE_REPO="loay94an/reference-and-books-on-patterns-and-models"
           RELEASE_TAG="concepts-original-2022.04.10"
-          ASSET_NAME="Concepts 2022.04.10.apk"
+          ASSET_NAME="Concepts.2022.04.10.apk"
+          test -n "${GH_TOKEN:-}" || { echo "::error::Missing repository secret APK_SOURCE_TOKEN"; exit 1; }
           mkdir -p "$RUNNER_TEMP/private-input"
           gh release download "$RELEASE_TAG" --repo "$SOURCE_REPO" --pattern "$ASSET_NAME" --dir "$RUNNER_TEMP/private-input"
           APK="$RUNNER_TEMP/private-input/$ASSET_NAME"
@@ -107,9 +108,9 @@ jobs:
             echo
             echo "- تاريخ التشغيل: $(date -u '+%Y-%m-%d %H:%M UTC')"
             echo "- نتيجة المهمة: $JOB_STATUS"
-            printf '%s\n' '- بصمة APK المعتمدة: `47e4e5244f2e2284349888a3fad00f407c1f0503429ec3d0e469f24924a98fdf`'
-            printf '%s\n' '- الحزمة المتوقعة: `com.tophatch.concepts`'
-            printf '%s\n' '- الإصدار المتوقع: `2022.04.10` (versionCode `220600201`)'
+            printf '%s\\n' '- بصمة APK المعتمدة: `47e4e5244f2e2284349888a3fad00f407c1f0503429ec3d0e469f24924a98fdf`'
+            printf '%s\\n' '- الحزمة المتوقعة: `com.tophatch.concepts`'
+            printf '%s\\n' '- الإصدار المتوقع: `2022.04.10` (versionCode `220600201`)'
             echo
             echo '## نطاق الفحص'
             echo '- REA Android package inspection'
