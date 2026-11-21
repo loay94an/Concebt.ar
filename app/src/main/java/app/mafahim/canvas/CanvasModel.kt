@@ -38,13 +38,26 @@ data class DrawingImage(
     val rotationDegrees: Float = 0f
 )
 
+data class DrawingArtboard(
+    val id: String,
+    val name: String,
+    val x: Float,
+    val y: Float,
+    val width: Float,
+    val height: Float,
+    val backgroundColor: Int = 0xFFFFFFFF.toInt(),
+    val visible: Boolean = true
+)
+
 data class DrawingDocument(
     val title: String,
     val layers: List<DrawingLayer>,
     val strokes: List<DrawStroke>,
     val id: String = UUID.randomUUID().toString(),
     val images: List<DrawingImage> = emptyList(),
-    val guides: List<ShapeGuide> = emptyList()
+    val guides: List<ShapeGuide> = emptyList(),
+    val artboards: List<DrawingArtboard> = emptyList(),
+    val activeArtboardId: String? = null
 ) {
     companion object {
         fun empty() = DrawingDocument(
