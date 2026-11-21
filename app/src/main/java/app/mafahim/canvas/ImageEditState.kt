@@ -7,7 +7,7 @@ import kotlin.math.min
 data class ImageRect(val left: Float, val top: Float, val right: Float, val bottom: Float) {
     val width get() = max(0f, right - left)
     val height get() = max(0f, bottom - top)
-    fun contains(x: Float, y: Float) = x >= left && x <= right && y >= top && y <= bottom
+    fun contains(x: Float, y: Float) = width > 0f && height > 0f && x >= left && x <= right && y >= top && y <= bottom
     fun intersect(other: ImageRect): ImageRect? {
         val l = max(left, other.left)
         val t = max(top, other.top)
