@@ -33,7 +33,7 @@ object PsdWriter {
                 val pascalName = layer.name.map { if (it.code in 32..126) it.code.toByte() else '?'.code.toByte() }.take(255).toByteArray()
                 val paddedNameLength = ((pascalName.size + 1 + 3) / 4) * 4
                 val unicodeName = layer.name.toByteArray(Charsets.UTF_16BE)
-                val unicodeBlockLength = 12 + unicodeName.size
+                val unicodeBlockLength = 16 + unicodeName.size
                 val extraLength = 8 + paddedNameLength + unicodeBlockLength
                 out.writeInt(extraLength)
                 out.writeInt(0) // layer mask data
