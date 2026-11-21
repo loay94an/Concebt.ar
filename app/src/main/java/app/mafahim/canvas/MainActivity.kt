@@ -206,6 +206,8 @@ private fun MafahimApp() {
                 BrushTool.PENCIL -> BrushPreset.PENCIL
                 BrushTool.MARKER -> BrushPreset.MARKER
                 BrushTool.ERASER -> BrushPreset.ERASER
+                BrushTool.ROUND_BRUSH -> BrushPreset.ROUND_BRUSH
+                BrushTool.CHISEL -> BrushPreset.CHISEL
                 else -> BrushPreset.FINELINER
             }
             stroke.id to IndependentBrushEngine.createDabs(
@@ -582,7 +584,9 @@ private fun MafahimApp() {
                                 BrushTool.ELLIPSE to "بيضاوي",
                                 BrushTool.MEASURE to "قياس",
                                 BrushTool.SELECT to "تحديد",
-                                BrushTool.GUIDE to "دليل"
+                                BrushTool.GUIDE to "دليل",
+                                BrushTool.ROUND_BRUSH to "فرشاة دائرية",
+                                BrushTool.CHISEL to "قلم عريض"
                             ).forEach { (tool, label) ->
                                 FilterChip(
                                     selected = selectedTool == tool,
