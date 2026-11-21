@@ -22,7 +22,9 @@ object PdfExporter {
 
         val visibleLayers = document.layers.filter { it.visible }.associateBy { it.id }
         val strokes = document.strokes.filter { it.layerId in visibleLayers && it.points.isNotEmpty() }
-        val points = strokes.flatMap { it.points }
+        val points = strokes.flatMap { it.points } + document.images.flatMap { image ->
+            listOf(CanvasPoint(image.x, image.y), CanvasPoint(image.x + image.width, image.y + image.height))
+        }
         val minX = points.minOfOrNull { it.x } ?: 0f
         val minY = points.minOfOrNull { it.y } ?: 0f
         val maxX = points.maxOfOrNull { it.x } ?: 1000f
