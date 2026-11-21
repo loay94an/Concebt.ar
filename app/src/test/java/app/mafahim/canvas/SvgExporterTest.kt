@@ -40,6 +40,18 @@ class SvgExporterTest {
     }
 
     @Test
+    fun embedsImportedImageAsDataUriWhenProvided() {
+        val image = DrawingImage("image-1", "image-1.png", 12f, 18f, 120f, 80f)
+        val document = DrawingDocument("صورة", listOf(DrawingLayer("layer-1", "الطبقة")), emptyList(),
+            images = listOf(image))
+
+        val svg = SvgExporter.buildSvg(document, mapOf("image-1.png" to "data:image/png;base64,AAAA"))
+
+        assertTrue(svg.contains("<image"))
+        assertTrue(svg.contains("data:image/png;base64,AAAA"))
+    }
+
+    @Test
     fun hiddenLayerIsNotExported() {
         val document = DrawingDocument("طبقات", listOf(DrawingLayer("layer-1", "مخفية", visible = false)),
             listOf(DrawStroke("hidden", "layer-1", BrushTool.PEN, -1, 4f, 1f,
