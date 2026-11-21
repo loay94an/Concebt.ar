@@ -2,10 +2,10 @@
 
 تطبيق Android مستقل باللغة العربية، يعيد تنفيذ مجموعة أولية من أدوات الرسم بواجهة RTL. هذه نسخة إعادة بناء مستقلة وليست نسخة معدلة من APK الأصلي أو استعادة لمصدر Concepts المغلق.
 
-## ما يعمل في الإصدار 0.2.0
+## ما يعمل في الإصدار 0.3.0
 
 - لوحة رسم بخلفية ورقية وشبكة خفيفة.
-- أدوات القلم والرصاص والمُحدِّد والممحاة وتحريك اللوحة.
+- أدوات القلم والرصاص والمُحدِّد والممحاة وتحريك اللوحة.\n- تسجيل ضغط الإدخال لكل نقطة ورسم سماكات متغيرة، مع حفظ متوافق مع ملفات الإصدار السابق وتصدير SVG يحافظ على الضغط.
 - ألوان وسماكة قابلة للتغيير.
 - طبقات مستقلة مع الإضافة والاختيار والإظهار والإخفاء والحذف.
 - تراجع وإعادة حتى 40 خطوة.
@@ -18,7 +18,7 @@
 تشغّل GitHub Actions اختبارات الوحدة ثم تبني APK تصحيحياً. نجاح CI يثبت نجاح التجميع والاختبارات المضمنة، لكنه لا يغني عن اختبار اللمس والأداء ومشاركة الملفات على أجهزة Android فعلية.
 
 - [بناء APK واختبارات الوحدة](.github/workflows/android-build.yml)
-- [تشغيل التحليل الثابت الآلي](.github/workflows/static-reverse-engineering.yml)
+- [تشغيل التحليل الثابت الآلي](.github/workflows/static-reverse-engineering.yml)\n- [تحليل JADX المتعمق للعينة الأصلية](.github/workflows/deep-static-analysis.yml)
 
 ## الهندسة العكسية
 
@@ -26,7 +26,7 @@
 
 - [تعليمات إعداد GitHub Actions](reverse-engineering/GITHUB_ACTIONS_SETUP_AR.md)
 - [حالة الهندسة العكسية وخطة العمل](reverse-engineering/REVERSE_ENGINEERING_STATUS_AR.md)
-- [نتائج JADX الاستطلاعية السابقة](reverse-engineering/JADX_STATIC_FINDINGS_AR.md)
+- [نتائج JADX الاستطلاعية السابقة](reverse-engineering/JADX_STATIC_FINDINGS_AR.md)\n- [تقرير REA الأولي الناجح](reverse-engineering/REA_CONCEPTS_ORIGINAL_REPORT_AR.md)\n- [تقرير التحليل الثابت المتعمق](reverse-engineering/CONCEPTS_DEEP_STATIC_REPORT_AR.md) (يُنشأ عبر GitHub Actions)
 - [خطة REA — لم يُنفذ بعد](reverse-engineering/REA_PLAN_AR.md)
 
 التقرير الآلي لا ينشر الشيفرة المفكوكة أو الأصول أو المكتبات الثنائية. كما أن JADX تحليل ثابت؛ لا يثبت سلوك التطبيق وقت التشغيل ولا يعني أن REA قد نُفذ.
