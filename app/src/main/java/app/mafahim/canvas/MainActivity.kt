@@ -6,6 +6,8 @@ import android.widget.Toast
 import android.view.MotionEvent
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -54,6 +56,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
@@ -65,6 +69,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.Dispatchers
@@ -97,6 +103,7 @@ private fun MafahimApp() {
     var galleryDialog by remember { mutableStateOf(false) }
     var documentList by remember { mutableStateOf(emptyList<DocumentSummary>()) }
     val scope = rememberCoroutineScope()
+    var imageBitmaps by remember { mutableStateOf<Map<String, ImageBitmap>>(emptyMap()) }
     val undoStack = remember { mutableStateListOf<DrawingDocument>() }
     val redoStack = remember { mutableStateListOf<DrawingDocument>() }
 
@@ -124,6 +131,27 @@ private fun MafahimApp() {
         if (undoStack.size > 40) undoStack.removeAt(0)
         redoStack.clear()
         document = next
+    }
+
+    val imagePicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) {
+            scope.launch {
+                val imported = withContext(Dispatchers.IO) { repository.importImage(uri) }
+                if (imported != null) {
+                    applyDocument(document.copy(images = document.images + imported))
+                } else {
+                    Toast.makeText(context, "تعذر استيراد الصورة", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
+
+    LaunchedEffect(document.images) {
+        imageBitmaps = withContext(Dispatchers.IO) {
+            document.images.mapNotNull { image ->
+                repository.loadImage(image.fileName)?.asImageBitmap()?.let { image.fileName to it }
+            }.toMap()
+        }
     }
 
     fun addStroke(stroke: DrawStroke) {
@@ -202,6 +230,7 @@ private fun MafahimApp() {
                             }, enabled = redoStack.isNotEmpty()) { Text("↷", fontSize = 22.sp) }
                             TextButton(onClick = { darkMode = !darkMode }) { Text(if (darkMode) "☀" else "☾") }
                             TextButton(onClick = { documentList = repository.listDocuments(); galleryDialog = true }) { Text("المستندات") }
+                            TextButton(onClick = { imagePicker.launch(arrayOf("image/*")) }) { Text("صورة") }
                             TextButton(onClick = {
                                 runCatching {
                                     val uri = SvgExporter.export(context, document)
@@ -376,6 +405,21 @@ private fun MafahimApp() {
                                         drawLine(Color(0xFFE8E9E8), Offset(0f, gy), Offset(size.width, gy), 0.7f)
                                         gy += spacing
                                     }
+                                }
+
+                                document.images.forEach { image ->
+                                    val bitmap = imageBitmaps[image.fileName] ?: return@forEach
+                                    drawImage(
+                                        image = bitmap,
+                                        dstOffset = IntOffset(
+                                            (image.x * zoom + pan.x).toInt(),
+                                            (image.y * zoom + pan.y).toInt()
+                                        ),
+                                        dstSize = IntSize(
+                                            (image.width * zoom).toInt().coerceAtLeast(1),
+                                            (image.height * zoom).toInt().coerceAtLeast(1)
+                                        )
+                                    )
                                 }
 
                                 val visibleLayers = document.layers.filter { it.visible }.associateBy { it.id }
