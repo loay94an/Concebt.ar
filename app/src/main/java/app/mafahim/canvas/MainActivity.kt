@@ -164,6 +164,20 @@ private fun MafahimApp() {
         }
     }
 
+    val pdfPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) {
+            scope.launch {
+                runCatching {
+                    val imported = withContext(Dispatchers.IO) { repository.importPdf(uri) }
+                    if (imported.isNotEmpty()) applyDocument(document.copy(images = document.images + imported))
+                    Toast.makeText(context, "تم استيراد ${imported.size} صفحة من PDF", Toast.LENGTH_LONG).show()
+                }.onFailure {
+                    Toast.makeText(context, it.message ?: "تعذر استيراد PDF", Toast.LENGTH_LONG).show()
+                }
+            }
+        }
+    }
+
     LaunchedEffect(document.images) {
         imageBitmaps = withContext(Dispatchers.IO) {
             document.images.mapNotNull { image ->
@@ -298,6 +312,7 @@ private fun MafahimApp() {
                     ) {
                         TextButton(onClick = { brushLibraryDialog = true }) { Text("✦ مكتبة الفرش") }
                         TextButton(onClick = { imagePicker.launch(arrayOf("image/*")) }) { Text("＋ صورة") }
+                        TextButton(onClick = { pdfPicker.launch(arrayOf("application/pdf")) }) { Text("＋ PDF") }
                         TextButton(onClick = { layersDialog = true }) { Text("▤ الطبقات") }
                         TextButton(onClick = { pagesDialog = true }) { Text("▧ الصفحات") }
                         TextButton(onClick = { artboardsDialog = true }) { Text("▦ اللوحات") }
