@@ -2,7 +2,9 @@
 
 ## الحالة
 - الاستطلاع المحلي الأولي: موثق في [JADX_STATIC_FINDINGS_AR.md](JADX_STATIC_FINDINGS_AR.md).
-- REA: نجح التشغيل على العينة الأصلية في 2026-11-21؛ تم اجتياز فحص الحزمة والبحث والفحص وتتبع المراجع للأصناف المحددة.\n- تقرير REA: [REA_CONCEPTS_ORIGINAL_REPORT_AR.md](REA_CONCEPTS_ORIGINAL_REPORT_AR.md).\n- التحليل الثابت المتعمق عبر JADX CLI: أُضيف workflow مستقل لجرد أصناف المحرك ومؤشرات MotionEvent وتصريحات native ومكتبات ABI؛ بانتظار نتيجة تشغيله.
+- REA: نجح التشغيل على العينة الأصلية في 2026-11-21؛ تم اجتياز فحص الحزمة والبحث والفحص وتتبع المراجع للأصناف المحددة.
+- تقرير REA: [REA_CONCEPTS_ORIGINAL_REPORT_AR.md](REA_CONCEPTS_ORIGINAL_REPORT_AR.md).
+- التحليل الثابت المتعمق عبر JADX CLI: أُضيف workflow مستقل لجرد أصناف المحرك ومؤشرات MotionEvent وتصريحات native ومكتبات ABI؛ بانتظار نتيجة تشغيله.
 - GitHub Actions: أضيف مسار JADX آلياً، ويتطلب إعداد مصدر APK الخاص مرة واحدة.
 - التطبيق: إعادة بناء مستقلة Kotlin/Jetpack Compose، وليست نسخة من محرك Concepts الأصلي.
 
