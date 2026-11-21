@@ -2,6 +2,7 @@ package app.mafahim.canvas
 
 import kotlin.math.hypot
 import kotlin.math.PI
+import java.util.UUID
 
 enum class BrushTool { PEN, PENCIL, MARKER, ERASER, MOVE }
 
@@ -27,7 +28,8 @@ data class DrawStroke(
 data class DrawingDocument(
     val title: String,
     val layers: List<DrawingLayer>,
-    val strokes: List<DrawStroke>
+    val strokes: List<DrawStroke>,
+    val id: String = UUID.randomUUID().toString()
 ) {
     companion object {
         fun empty() = DrawingDocument(
