@@ -27,7 +27,7 @@
 - [تعليمات إعداد GitHub Actions](reverse-engineering/GITHUB_ACTIONS_SETUP_AR.md)
 - [حالة الهندسة العكسية وخطة العمل](reverse-engineering/REVERSE_ENGINEERING_STATUS_AR.md)
 - [نتائج JADX الاستطلاعية السابقة](reverse-engineering/JADX_STATIC_FINDINGS_AR.md)\n- [تقرير REA الأولي الناجح](reverse-engineering/REA_CONCEPTS_ORIGINAL_REPORT_AR.md)\n- [تقرير التحليل الثابت المتعمق](reverse-engineering/CONCEPTS_DEEP_STATIC_REPORT_AR.md) (يُنشأ عبر GitHub Actions)
-- [خطة REA — لم يُنفذ بعد](reverse-engineering/REA_PLAN_AR.md)
+- [خطة REA وسجل نتائج التنفيذ](reverse-engineering/REA_PLAN_AR.md)
 
 التقرير الآلي لا ينشر الشيفرة المفكوكة أو الأصول أو المكتبات الثنائية. كما أن JADX تحليل ثابت؛ لا يثبت سلوك التطبيق وقت التشغيل. تم تنفيذ REA فعلياً على العينة، وتقرير التحليل المتعمق مستقل عنه.
 
