@@ -46,6 +46,32 @@ class DocumentRepository(context: Context) {
         DrawingImage(id, name, 60f, 60f, imageWidth.toFloat(), imageHeight.toFloat())
     }.getOrNull()
 
+    fun cropImage(image: DrawingImage, frame: ImageCropFrame): DrawingImage? = runCatching {
+        val source = loadImage(image.fileName) ?: throw IllegalArgumentException("الصورة الأصلية غير موجودة")
+        val left = (source.width * frame.left).toInt().coerceIn(0, source.width - 1)
+        val top = (source.height * frame.top).toInt().coerceIn(0, source.height - 1)
+        val right = (source.width * frame.right).toInt().coerceIn(left + 1, source.width)
+        val bottom = (source.height * frame.bottom).toInt().coerceIn(top + 1, source.height)
+        val cropped = Bitmap.createBitmap(source, left, top, right - left, bottom - top)
+        imagesDir.mkdirs()
+        val fileName = "${UUID.randomUUID()}.png"
+        FileOutputStream(File(imagesDir, fileName)).use { output ->
+            check(cropped.compress(Bitmap.CompressFormat.PNG, 100, output)) { "تعذر حفظ الصورة المقصوصة" }
+        }
+        val scaleX = (right - left).toFloat() / source.width
+        val scaleY = (bottom - top).toFloat() / source.height
+        val result = image.copy(
+            fileName = fileName,
+            x = image.x + image.width * frame.left,
+            y = image.y + image.height * frame.top,
+            width = image.width * scaleX,
+            height = image.height * scaleY
+        )
+        if (cropped !== source) cropped.recycle()
+        source.recycle()
+        result
+    }.getOrNull()
+
     fun loadImage(fileName: String): Bitmap? {
         val safeName = File(fileName).name
         return BitmapFactory.decodeFile(File(imagesDir, safeName).absolutePath)
