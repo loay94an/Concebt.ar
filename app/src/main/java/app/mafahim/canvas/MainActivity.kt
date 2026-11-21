@@ -225,7 +225,7 @@ private fun MafahimApp() {
                                                 val startZoom = currentZoom
                                                 val points = mutableListOf(
                                                     CanvasGeometry.toWorld(
-                                                        CanvasPoint(down.position.x, down.position.y, down.pressure),
+                                                        CanvasPoint(down.position.x, down.position.y, CanvasGeometry.normalizedPressure(down.pressure)),
                                                         startZoom, startPan.x, startPan.y
                                                     )
                                                 )
@@ -235,7 +235,7 @@ private fun MafahimApp() {
                                                     if (!change.pressed) break
                                                     points.add(
                                                         CanvasGeometry.toWorld(
-                                                            CanvasPoint(change.position.x, change.position.y, change.pressure),
+                                                            CanvasPoint(change.position.x, change.position.y, CanvasGeometry.normalizedPressure(change.pressure)),
                                                             startZoom, startPan.x, startPan.y
                                                         )
                                                     )
