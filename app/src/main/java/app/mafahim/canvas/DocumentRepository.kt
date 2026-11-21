@@ -4,6 +4,9 @@ import android.content.Context
 import android.net.Uri
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Rect
+import android.graphics.pdf.PdfRenderer
+import android.os.ParcelFileDescriptor
 import java.io.BufferedInputStream
 import java.io.BufferedOutputStream
 import java.io.DataInputStream
@@ -45,6 +48,38 @@ class DocumentRepository(context: Context) {
         if (scaled !== bitmap) bitmap.recycle()
         DrawingImage(id, name, 60f, 60f, imageWidth.toFloat(), imageHeight.toFloat())
     }.getOrNull()
+
+    fun importPdf(uri: Uri): List<DrawingImage> = runCatching {
+        imagesDir.mkdirs()
+        val descriptor = appContext.contentResolver.openFileDescriptor(uri, "r")
+            ?: throw IllegalArgumentException("تعذر فتح ملف PDF")
+        descriptor.use { parcel ->
+            PdfRenderer(parcel).use { renderer ->
+                require(renderer.pageCount in 1..40) { "يدعم الاستيراد حتى 40 صفحة في المرة الواحدة" }
+                buildList {
+                    var top = 60f
+                    for (index in 0 until renderer.pageCount) {
+                        renderer.openPage(index).use { page ->
+                            val scale = minOf(1.8f, 2000f / maxOf(page.width, page.height).toFloat())
+                            val width = (page.width * scale).toInt().coerceAtLeast(1)
+                            val height = (page.height * scale).toInt().coerceAtLeast(1)
+                            val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+                            bitmap.eraseColor(android.graphics.Color.WHITE)
+                            page.render(bitmap, Rect(0, 0, width, height), null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
+                            val id = UUID.randomUUID().toString()
+                            val name = "$id.png"
+                            FileOutputStream(File(imagesDir, name)).use { output ->
+                                check(bitmap.compress(Bitmap.CompressFormat.PNG, 100, output)) { "تعذر حفظ صفحة PDF" }
+                            }
+                            bitmap.recycle()
+                            add(DrawingImage(id, name, 60f, top, width.toFloat(), height.toFloat()))
+                            top += height + 32f
+                        }
+                    }
+                }
+            }
+        }
+    }.getOrElse { throw IllegalArgumentException(it.message ?: "تعذر استيراد ملف PDF", it) }
 
     fun cropImage(image: DrawingImage, frame: ImageCropFrame): DrawingImage? = runCatching {
         val source = loadImage(image.fileName) ?: throw IllegalArgumentException("الصورة الأصلية غير موجودة")
