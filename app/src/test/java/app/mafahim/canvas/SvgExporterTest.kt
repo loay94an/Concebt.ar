@@ -13,7 +13,7 @@ class SvgExporterTest {
 
         val svg = SvgExporter.buildSvg(document)
 
-        assertTrue(svg.contains("""viewBox="-44.0 -14.0 148.0 148.0""""))
+        assertTrue(svg.contains("viewBox=\"-44.0 -14.0 148.0 148.0\""))
         assertTrue(svg.contains("#123456"))
         assertTrue(svg.contains("<polyline"))
     }
