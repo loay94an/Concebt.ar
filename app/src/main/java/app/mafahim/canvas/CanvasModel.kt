@@ -87,7 +87,7 @@ object CanvasGeometry {
                 (0..64).map { step ->
                     val angle = (step / 64f) * (2f * PI.toFloat())
                     CanvasPoint(centerX + cos(angle) * radiusX, centerY + sin(angle) * radiusY)
-                }
+                }.toMutableList().apply { this[lastIndex] = this.first() }
             }
             else -> listOf(start, end)
         }
