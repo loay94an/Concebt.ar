@@ -187,6 +187,22 @@ private fun MafahimApp() {
         0xFF111111.toInt(), 0xFF777777.toInt()
     )
 
+    // Cache deterministic brush geometry per document revision; the Canvas draw pass
+    // only maps the prepared nib outlines into screen coordinates.
+    val preparedBrushDabs = remember(document) {
+        document.strokes.associate { stroke ->
+            val preset = when (stroke.tool) {
+                BrushTool.PENCIL -> BrushPreset.PENCIL
+                BrushTool.MARKER -> BrushPreset.MARKER
+                BrushTool.ERASER -> BrushPreset.ERASER
+                else -> BrushPreset.FINELINER
+            }
+            stroke.id to IndependentBrushEngine.createDabs(
+                stroke.points, preset, stroke.width, stroke.opacity
+            )
+        }
+    }
+
     val colorScheme = if (darkMode) {
         darkColorScheme(
             primary = Color(0xFF9AB8F0),
@@ -450,23 +466,37 @@ private fun MafahimApp() {
                                     val color = Color(stroke.color).copy(
                                         alpha = (stroke.opacity * layer.opacity).coerceIn(0f, 1f)
                                     )
-                                    val mapped = stroke.points.map { Offset(it.x * zoom + pan.x, it.y * zoom + pan.y) }
-                                    if (mapped.size == 1) {
-                                        val pressure = CanvasGeometry.pressureTiltWidth(stroke.points.first(), 1f)
-                                        drawCircle(
-                                            color,
-                                            radius = (stroke.width * pressure * zoom / 2f).coerceAtLeast(0.5f),
-                                            center = mapped.first()
-                                        )
+                                    val isShape = stroke.tool == BrushTool.LINE ||
+                                        stroke.tool == BrushTool.RECTANGLE ||
+                                        stroke.tool == BrushTool.ELLIPSE ||
+                                        stroke.tool == BrushTool.MEASURE
+                                    if (isShape) {
+                                        val mapped = stroke.points.map { Offset(it.x * zoom + pan.x, it.y * zoom + pan.y) }
+                                        if (mapped.size == 1) {
+                                            drawCircle(color, radius = (stroke.width * zoom / 2f).coerceAtLeast(0.5f), center = mapped.first())
+                                        } else {
+                                            stroke.points.zipWithNext().forEachIndexed { index, pair ->
+                                                val pressure = (CanvasGeometry.pressureTiltWidth(pair.first, 1f) + CanvasGeometry.pressureTiltWidth(pair.second, 1f)) / 2f
+                                                drawLine(color, mapped[index], mapped[index + 1],
+                                                    strokeWidth = (stroke.width * pressure * zoom).coerceAtLeast(0.5f),
+                                                    cap = StrokeCap.Round)
+                                            }
+                                        }
                                     } else {
-                                        stroke.points.zipWithNext().forEachIndexed { index, pair ->
-                                            val pressure = (CanvasGeometry.pressureTiltWidth(pair.first, 1f) + CanvasGeometry.pressureTiltWidth(pair.second, 1f)) / 2f
-                                            drawLine(
-                                                color = color,
-                                                start = mapped[index],
-                                                end = mapped[index + 1],
-                                                strokeWidth = (stroke.width * pressure * zoom).coerceAtLeast(0.5f),
-                                                cap = StrokeCap.Round
+                                        preparedBrushDabs[stroke.id].orEmpty().forEach { dab ->
+                                            val outline = dab.outline(20)
+                                            val nibPath = Path().apply {
+                                                if (outline.isNotEmpty()) {
+                                                    moveTo(outline.first().x * zoom + pan.x, outline.first().y * zoom + pan.y)
+                                                    outline.drop(1).forEach { point ->
+                                                        lineTo(point.x * zoom + pan.x, point.y * zoom + pan.y)
+                                                    }
+                                                    close()
+                                                }
+                                            }
+                                            drawPath(
+                                                path = nibPath,
+                                                color = Color(stroke.color).copy(alpha = (dab.opacity * layer.opacity).coerceIn(0f, 1f))
                                             )
                                         }
                                     }
