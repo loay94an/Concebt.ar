@@ -284,6 +284,19 @@ private fun MafahimApp() {
                             }) { Text("PDF") }
                             TextButton(onClick = {
                                 runCatching {
+                                    val uri = PsdExporter.export(context, document)
+                                    val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                                        type = "image/vnd.adobe.photoshop"
+                                        putExtra(Intent.EXTRA_STREAM, uri)
+                                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                    }
+                                    context.startActivity(Intent.createChooser(shareIntent, "تصدير PSD بطبقات"))
+                                }.onFailure {
+                                    Toast.makeText(context, it.message ?: "تعذر إنشاء PSD", Toast.LENGTH_LONG).show()
+                                }
+                            }) { Text("PSD") }
+                            TextButton(onClick = {
+                                runCatching {
                                     val uri = DxfExporter.export(context, document)
                                     val shareIntent = Intent(Intent.ACTION_SEND).apply {
                                         type = "application/dxf"
