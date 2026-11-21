@@ -39,16 +39,17 @@ jobs:
 
       - name: Install Android SDK
         run: |
-          yes | sdkmanager 'platforms;android-35' 'build-tools;35.0.0' 'emulator' 'platform-tools' 'system-images;android-35;google_apis;x86_64'
+          yes | sdkmanager 'platforms;android-35' 'build-tools;35.0.0' 'emulator' 'platform-tools' 'system-images;android-34;google_apis;x86_64'
 
       - name: Run UI smoke test on Android emulator
         uses: reactivecircus/android-emulator-runner@v2
         with:
-          api-level: 35
+          api-level: 34
           target: google_apis
           arch: x86_64
           profile: pixel_2
           emulator-boot-timeout: 900
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -memory 2048 -cores 2
           disable-animations: true
           script: gradle connectedDebugAndroidTest --stacktrace
 
