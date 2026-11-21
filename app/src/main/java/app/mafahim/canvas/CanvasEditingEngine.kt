@@ -1,7 +1,6 @@
 package app.mafahim.canvas
 
 import java.util.UUID
-import kotlin.math.abs
 
 data class CanvasClipboard(
     val strokes: List<DrawStroke> = emptyList(),
@@ -24,9 +23,7 @@ object CanvasEditingEngine {
         val visible = document.layers.filter { it.visible && !it.locked }.mapTo(hashSetOf()) { it.id }
         return CanvasSelection(
             strokeIds = document.strokes.filter { it.layerId in visible }.mapTo(linkedSetOf()) { it.id },
-            imageIds = document.images.filter { image ->
-                document.layers.any { it.id == document.layers.firstOrNull { layer -> layer.id in visible }?.id && it.visible && !it.locked }
-            }.mapTo(linkedSetOf()) { it.id }
+            imageIds = document.images.mapTo(linkedSetOf()) { it.id }
         )
     }
 
