@@ -63,6 +63,8 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.rotate
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.ui.input.pointer.pointerInteropFilter
@@ -108,6 +110,8 @@ private fun MafahimApp() {
     var imageBitmaps by remember { mutableStateOf<Map<String, ImageBitmap>>(emptyMap()) }
     val undoStack = remember { mutableStateListOf<DrawingDocument>() }
     val redoStack = remember { mutableStateListOf<DrawingDocument>() }
+    var canvasSelection by remember { mutableStateOf(CanvasSelection()) }
+    var snapEnabled by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         val saved = withContext(Dispatchers.IO) { repository.load() }
@@ -155,6 +159,9 @@ private fun MafahimApp() {
             }.toMap()
         }
     }
+
+    fun snapped(point: CanvasPoint): CanvasPoint = if (!snapEnabled) point else
+        CanvasSnapEngine.snap(point, document.guides, 34f, emptyList(), 8f / zoom.coerceAtLeast(0.2f)).point
 
     fun addStroke(stroke: DrawStroke) {
         val targetLayer = document.layers.firstOrNull { it.id == stroke.layerId } ?: return
@@ -308,7 +315,7 @@ private fun MafahimApp() {
                                                 CanvasGeometry.normalizedTilt(event.getAxisValue(MotionEvent.AXIS_TILT, index)),
                                                 CanvasGeometry.normalizedOrientation(event.getAxisValue(MotionEvent.AXIS_ORIENTATION, index))
                                             )
-                                            return CanvasGeometry.toWorld(raw, currentZoom, currentPan.x, currentPan.y)
+                                            return snapped(CanvasGeometry.toWorld(raw, currentZoom, currentPan.x, currentPan.y))
                                         }
                                         fun centroid(): Offset {
                                             var x = 0f
@@ -339,7 +346,7 @@ private fun MafahimApp() {
                                                     CanvasGeometry.normalizedTilt(event.getHistoricalAxisValue(MotionEvent.AXIS_TILT, index, h)),
                                                     CanvasGeometry.normalizedOrientation(event.getHistoricalAxisValue(MotionEvent.AXIS_ORIENTATION, index, h))
                                                 )
-                                                gesturePoints.add(CanvasGeometry.toWorld(sample, currentZoom, currentPan.x, currentPan.y))
+                                                gesturePoints.add(snapped(CanvasGeometry.toWorld(sample, currentZoom, currentPan.x, currentPan.y)))
                                             }
                                             gesturePoints.add(pointAt(index))
                                         }
@@ -347,11 +354,17 @@ private fun MafahimApp() {
                                             MotionEvent.ACTION_DOWN -> {
                                                 gesturePoints.clear()
                                                 activeTool = currentTool
-                                                drawingGesture = activeTool != BrushTool.MOVE
+                                                drawingGesture = activeTool != BrushTool.MOVE && activeTool != BrushTool.SELECT && activeTool != BrushTool.GUIDE
                                                 panningGesture = activeTool == BrushTool.MOVE
                                                 previousCentroid = Offset(event.x, event.y)
                                                 previousSpan = 0f
-                                                if (drawingGesture) appendSamples()
+                                                if (activeTool == BrushTool.SELECT) {
+                                                    val hit = pointAt(0)
+                                                    canvasSelection = CanvasSelectionEngine.hitTest(document, hit.x, hit.y, 12f / currentZoom.coerceAtLeast(0.2f))
+                                                } else if (activeTool == BrushTool.GUIDE) {
+                                                    val anchor = pointAt(0)
+                                                    applyDocument(document.copy(guides = document.guides + ShapeGuide(UUID.randomUUID().toString(), ShapeGuideType.LINE, anchor)))
+                                                } else if (drawingGesture) appendSamples()
                                             }
                                             MotionEvent.ACTION_POINTER_DOWN -> {
                                                 drawingGesture = false
@@ -446,19 +459,29 @@ private fun MafahimApp() {
 
                                 document.images.forEach { image ->
                                     val bitmap = imageBitmaps[image.fileName] ?: return@forEach
-                                    drawImage(
-                                        image = bitmap,
-                                        dstOffset = IntOffset(
-                                            (image.x * zoom + pan.x).toInt(),
-                                            (image.y * zoom + pan.y).toInt()
-                                        ),
-                                        dstSize = IntSize(
-                                            (image.width * zoom).toInt().coerceAtLeast(1),
-                                            (image.height * zoom).toInt().coerceAtLeast(1)
+                                    rotate(
+                                        degrees = image.rotationDegrees,
+                                        pivot = Offset((image.x + image.width / 2f) * zoom + pan.x, (image.y + image.height / 2f) * zoom + pan.y)
+                                    ) {
+                                        drawImage(
+                                            image = bitmap,
+                                            dstOffset = IntOffset((image.x * zoom + pan.x).toInt(), (image.y * zoom + pan.y).toInt()),
+                                            dstSize = IntSize((image.width * zoom).toInt().coerceAtLeast(1), (image.height * zoom).toInt().coerceAtLeast(1))
                                         )
-                                    )
+                                    }
                                 }
 
+                                document.guides.filter { it.enabled }.forEach { guide ->
+                                    val angle = Math.toRadians(guide.angleDegrees.toDouble())
+                                    val dx = kotlin.math.cos(angle).toFloat()
+                                    val dy = kotlin.math.sin(angle).toFloat()
+                                    val origin = Offset(guide.origin.x * zoom + pan.x, guide.origin.y * zoom + pan.y)
+                                    if (guide.type == ShapeGuideType.LINE || guide.type == ShapeGuideType.PARALLEL || guide.type == ShapeGuideType.PERPENDICULAR) {
+                                        val ux = if (guide.type == ShapeGuideType.PERPENDICULAR) -dy else dx
+                                        val uy = if (guide.type == ShapeGuideType.PERPENDICULAR) dx else dy
+                                        drawLine(Color(0xFF3C8DAD).copy(alpha = 0.65f), origin - Offset(ux, uy) * 5000f, origin + Offset(ux, uy) * 5000f, strokeWidth = 1.2f)
+                                    }
+                                }
                                 val visibleLayers = document.layers.filter { it.visible }.associateBy { it.id }
                                 document.strokes.forEach { stroke ->
                                     val layer = visibleLayers[stroke.layerId] ?: return@forEach
@@ -501,6 +524,14 @@ private fun MafahimApp() {
                                         }
                                     }
                                 }
+                                CanvasSelectionEngine.bounds(document, canvasSelection)?.let { bounds ->
+                                    drawRect(
+                                        color = Color(0xFF1976D2),
+                                        topLeft = Offset(bounds.left * zoom + pan.x, bounds.top * zoom + pan.y),
+                                        size = Size(bounds.width * zoom, bounds.height * zoom),
+                                        style = Stroke(width = 2f)
+                                    )
+                                }
                             }
                             Surface(
                                 modifier = Modifier.align(Alignment.TopStart).padding(9.dp),
@@ -532,7 +563,9 @@ private fun MafahimApp() {
                                 BrushTool.LINE to "خط",
                                 BrushTool.RECTANGLE to "مستطيل",
                                 BrushTool.ELLIPSE to "بيضاوي",
-                                BrushTool.MEASURE to "قياس"
+                                BrushTool.MEASURE to "قياس",
+                                BrushTool.SELECT to "تحديد",
+                                BrushTool.GUIDE to "دليل"
                             ).forEach { (tool, label) ->
                                 FilterChip(
                                     selected = selectedTool == tool,
@@ -542,6 +575,26 @@ private fun MafahimApp() {
                             }
                         }
 
+                        Row(
+                            modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            FilterChip(selected = snapEnabled, onClick = { snapEnabled = !snapEnabled }, label = { Text("التقاط ذكي", fontSize = 11.sp) })
+                            if (!canvasSelection.isEmpty) {
+                                TextButton(onClick = { applyDocument(CanvasSelectionEngine.transform(document, canvasSelection, SelectionTransform(translateX = -10f))) }) { Text("←") }
+                                TextButton(onClick = { applyDocument(CanvasSelectionEngine.transform(document, canvasSelection, SelectionTransform(translateX = 10f))) }) { Text("→") }
+                                TextButton(onClick = { applyDocument(CanvasSelectionEngine.transform(document, canvasSelection, SelectionTransform(translateY = -10f))) }) { Text("↑") }
+                                TextButton(onClick = { applyDocument(CanvasSelectionEngine.transform(document, canvasSelection, SelectionTransform(translateY = 10f))) }) { Text("↓") }
+                                TextButton(onClick = { applyDocument(CanvasSelectionEngine.transform(document, canvasSelection, SelectionTransform(scaleX = 1.1f, scaleY = 1.1f))) }) { Text("تكبير") }
+                                TextButton(onClick = { applyDocument(CanvasSelectionEngine.transform(document, canvasSelection, SelectionTransform(scaleX = 0.9f, scaleY = 0.9f))) }) { Text("تصغير") }
+                                TextButton(onClick = { applyDocument(CanvasSelectionEngine.transform(document, canvasSelection, SelectionTransform(rotationDegrees = 15f))) }) { Text("↻") }
+                                TextButton(onClick = {
+                                    applyDocument(document.copy(strokes = document.strokes.filterNot { it.id in canvasSelection.strokeIds }, images = document.images.filterNot { it.id in canvasSelection.imageIds }))
+                                    canvasSelection = CanvasSelection()
+                                }) { Text("حذف") }
+                            }
+                        }
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             verticalAlignment = Alignment.CenterVertically,
