@@ -19,9 +19,8 @@ permissions:
 
 jobs:
   emulator:
-    # Pin the known-stable hosted image; ubuntu-latest can move to a new
-    # runner image with emulator/KVM regressions independently of app code.
-    runs-on: ubuntu-24.04
+    # macOS runner provides native emulator acceleration; hosted Linux VM had no KVM.
+    runs-on: macos-14
     timeout-minutes: 50
     steps:
       - uses: actions/checkout@v4
