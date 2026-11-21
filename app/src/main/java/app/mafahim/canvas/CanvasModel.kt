@@ -49,6 +49,16 @@ data class DrawingArtboard(
     val visible: Boolean = true
 )
 
+data class DrawingPage(
+    val id: String,
+    val name: String,
+    val backgroundColor: Int = 0xFFFFFFFF.toInt(),
+    val layers: List<DrawingLayer>,
+    val strokes: List<DrawStroke>,
+    val images: List<DrawingImage> = emptyList(),
+    val guides: List<ShapeGuide> = emptyList()
+)
+
 data class DrawingDocument(
     val title: String,
     val layers: List<DrawingLayer>,
@@ -57,7 +67,9 @@ data class DrawingDocument(
     val images: List<DrawingImage> = emptyList(),
     val guides: List<ShapeGuide> = emptyList(),
     val artboards: List<DrawingArtboard> = emptyList(),
-    val activeArtboardId: String? = null
+    val activeArtboardId: String? = null,
+    val pages: List<DrawingPage> = emptyList(),
+    val activePageId: String? = null
 ) {
     companion object {
         fun empty() = DrawingDocument(
