@@ -18,7 +18,7 @@
 
 ## التحقق والبناء
 
-تشغّل GitHub Actions اختبارات الوحدة ثم تبني APK تصحيحياً. نجاح CI يثبت نجاح التجميع والاختبارات المضمنة، لكنه لا يغني عن اختبار اللمس والأداء ومشاركة الملفات على أجهزة Android فعلية.
+تشغّل GitHub Actions اختبارات الوحدة ثم تبني APK تصحيحياً. [تحميل APK الإصدار 0.4.0 من Artifacts](https://github.com/loay94an/Concebt.ar/actions/runs/44931147387). نجاح CI يثبت نجاح التجميع والاختبارات المضمنة، لكنه لا يغني عن اختبار اللمس والأداء على جهاز Android فعلي.
 
 - [بناء APK واختبارات الوحدة](.github/workflows/android-build.yml)
 - [اختبار واجهة Android على المحاكي](.github/workflows/android-emulator-test.yml)
