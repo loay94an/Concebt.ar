@@ -19,6 +19,13 @@ class CanvasGeometryTest {
     }
 
     @Test
+    fun pressureIsClampedToPhysicalRange() {
+        assertEquals(0.05f, CanvasGeometry.normalizedPressure(-2f), 0.001f)
+        assertEquals(1f, CanvasGeometry.normalizedPressure(4f), 0.001f)
+        assertEquals(1f, CanvasGeometry.normalizedPressure(Float.NaN), 0.001f)
+    }
+
+    @Test
     fun distanceUsesEuclideanMetric() {
         assertEquals(5f, CanvasGeometry.distance(CanvasPoint(0f, 0f), CanvasPoint(3f, 4f)), 0.001f)
     }
