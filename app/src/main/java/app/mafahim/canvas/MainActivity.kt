@@ -667,4 +667,3 @@ private fun MafahimApp() {
         )
     }
 }
-}
