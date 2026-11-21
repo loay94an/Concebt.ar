@@ -49,7 +49,7 @@ object SvgExporter {
             appendLine("""<rect x="${fmt(minX)}" y="${fmt(minY)}" width="${fmt(viewWidth)}" height="${fmt(viewHeight)}" fill="#ffffff"/>""")
             document.images.forEach { image ->
                 val data = imageData[image.fileName] ?: return@forEach
-                appendLine("""<image x="${fmt(image.x)}" y="${fmt(image.y)}" width="${fmt(image.width)}" height="${fmt(image.height)}" href="$data"/>""")
+                appendLine("""<g transform="rotate(${fmt(image.rotationDegrees)} ${fmt(image.x + image.width / 2f)} ${fmt(image.y + image.height / 2f)})"><image x="${fmt(image.x)}" y="${fmt(image.y)}" width="${fmt(image.width)}" height="${fmt(image.height)}" href="$data"/></g>""")
             }
             drawable.forEach { (stroke, points, widthAndOpacity) ->
                 val (width, opacity) = widthAndOpacity
