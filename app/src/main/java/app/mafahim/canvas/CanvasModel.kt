@@ -25,11 +25,21 @@ data class DrawStroke(
     val points: List<CanvasPoint>
 )
 
+data class DrawingImage(
+    val id: String,
+    val fileName: String,
+    val x: Float,
+    val y: Float,
+    val width: Float,
+    val height: Float
+)
+
 data class DrawingDocument(
     val title: String,
     val layers: List<DrawingLayer>,
     val strokes: List<DrawStroke>,
-    val id: String = UUID.randomUUID().toString()
+    val id: String = UUID.randomUUID().toString(),
+    val images: List<DrawingImage> = emptyList()
 ) {
     companion object {
         fun empty() = DrawingDocument(
