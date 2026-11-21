@@ -164,8 +164,17 @@ private fun MafahimApp() {
         }
     }
 
+    val snapCandidates = remember(document) {
+        val visibleIds = document.layers.filter { it.visible && !it.locked }.mapTo(hashSetOf()) { it.id }
+        document.strokes.filter { it.layerId in visibleIds }.flatMap { stroke ->
+            listOfNotNull(stroke.points.firstOrNull(), stroke.points.lastOrNull())
+        } + document.images.flatMap { image ->
+            listOf(CanvasPoint(image.x, image.y), CanvasPoint(image.x + image.width, image.y + image.height))
+        }
+    }
+
     fun snapped(point: CanvasPoint): CanvasPoint = if (!snapEnabled) point else
-        CanvasSnapEngine.snap(point, document.guides, 34f, emptyList(), 8f / zoom.coerceAtLeast(0.2f)).point
+        CanvasSnapEngine.snap(point, document.guides, 34f, snapCandidates, 8f / zoom.coerceAtLeast(0.2f)).point
 
     fun addStroke(stroke: DrawStroke) {
         val targetLayer = document.layers.firstOrNull { it.id == stroke.layerId } ?: return
