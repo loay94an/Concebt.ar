@@ -102,6 +102,17 @@ class DocumentRepository(context: Context) {
                 output.writeFloat(image.height.finiteOr(1f).coerceIn(1f, 10000f))
                 output.writeFloat(image.rotationDegrees.finiteOr(0f).coerceIn(-360f, 360f))
             }
+            val guides = document.guides.take(MAX_GUIDES)
+            output.writeInt(guides.size)
+            guides.forEach { guide ->
+                output.writeUTF(guide.id.take(MAX_TEXT))
+                output.writeInt(guide.type.ordinal)
+                output.writeFloat(guide.origin.x.finiteOr(0f))
+                output.writeFloat(guide.origin.y.finiteOr(0f))
+                output.writeFloat(guide.angleDegrees.finiteOr(0f).coerceIn(-360f, 360f))
+                output.writeFloat(guide.spacing.finiteOr(24f).coerceIn(1f, 10000f))
+                output.writeBoolean(guide.enabled)
+            }
             output.flush()
         }
 
@@ -191,7 +202,23 @@ class DocumentRepository(context: Context) {
                         DrawingImage(fileName.removeSuffix(".png"), fileName, x, y, width, height, rotation)
                     }
                 } else emptyList()
-                DrawingDocument(title, layers, strokes, documentId, images)
+                val guides = if (formatVersion >= 7) {
+                    val count = input.readInt()
+                    require(count in 0..MAX_GUIDES) { "عدد الأدلة غير صالح" }
+                    List(count) {
+                        val id = input.readUTF()
+                        val typeIndex = input.readInt()
+                        val type = ShapeGuideType.entries.getOrNull(typeIndex)
+                            ?: throw IllegalArgumentException("نوع دليل غير صالح")
+                        val x = input.readFloat().finiteOr(0f)
+                        val y = input.readFloat().finiteOr(0f)
+                        val angle = input.readFloat().finiteOr(0f).coerceIn(-360f, 360f)
+                        val spacing = input.readFloat().finiteOr(24f).coerceIn(1f, 10000f)
+                        val enabled = input.readBoolean()
+                        ShapeGuide(id, type, CanvasPoint(x, y), angle, spacing, enabled)
+                    }
+                } else emptyList()
+                DrawingDocument(title, layers, strokes, documentId, images, guides)
             }
         }.getOrNull()
     }
@@ -200,11 +227,12 @@ class DocumentRepository(context: Context) {
 
     companion object {
         private const val MAGIC = 0x4D464D31
-        private const val FORMAT_VERSION = 6
+        private const val FORMAT_VERSION = 7
         private const val MAX_TEXT = 256
         private const val MAX_LAYERS = 128
         private const val MAX_STROKES = 100_000
         private const val MAX_POINTS = 50_000
         private const val MAX_IMAGES = 256
+        private const val MAX_GUIDES = 256
     }
 }
