@@ -1,6 +1,6 @@
 package app.mafahim.canvas
 
-import androidx.compose.ui.test.assertExists
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -15,7 +15,7 @@ class MainActivitySmokeTest {
 
     @Test
     fun launchesArabicDrawingWorkspace() {
-        composeRule.onNodeWithText("مفاهيم").assertExists()
+        composeRule.onNodeWithText("مفاهيم").assertIsDisplayed()
         composeRule.onNodeWithText("استوديو الرسم").assertExists()
         composeRule.onNodeWithText("قلم").assertExists()
         composeRule.onNodeWithText("ممحاة").assertExists()
