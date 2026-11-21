@@ -54,6 +54,17 @@ class CanvasInteractionTest {
         assertEquals(0f, result.point.y, 0.001f)
     }
 
+    @Test fun rotatedImageHitTestUsesInverseRotation() {
+        val doc = sampleDocument().copy(images = listOf(DrawingImage("rot", "r.png", 0f, 0f, 100f, 20f, 90f)))
+        val selection = CanvasSelectionEngine.hitTest(doc, 50f, -35f, 1f)
+        assertEquals(setOf("rot"), selection.imageIds)
+    }
+
+    @Test fun lockedLayerCannotBeSelected() {
+        val doc = sampleDocument().copy(layers = listOf(DrawingLayer("l1", "Layer", locked = true)))
+        assertTrue(CanvasSelectionEngine.hitTest(doc, 50f, 1f, 2f).isEmpty)
+    }
+
     @Test fun measurementSupportsCalibrationAndUnits() {
         val a = CanvasPoint(0f, 0f)
         val b = CanvasPoint(100f, 0f)
