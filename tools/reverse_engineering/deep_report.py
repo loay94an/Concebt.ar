@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Create a concise, non-source report from JADX output and APK native libraries."""
 from __future__ import annotations
+
 import argparse
 import hashlib
 import re
@@ -21,6 +22,7 @@ EVENT_TOKENS = [
     "createCanvas(", "loadLibrary(", "ReLinker.loadLibrary",
 ]
 
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--apk", required=True, type=Path)
@@ -30,7 +32,7 @@ def main() -> None:
 
     digest = hashlib.sha256(args.apk.read_bytes()).hexdigest()
     java_files = list(args.sources.rglob("*.java"))
-    class_hits: dict[str, list[Path]] = {name: [] for name in TARGETS}
+    class_hits: dict[str, list[str]] = {name: [] for name in TARGETS}
     token_files: dict[str, list[str]] = {token: [] for token in EVENT_TOKENS}
     native_methods: list[str] = []
     load_files: list[str] = []
@@ -42,22 +44,26 @@ def main() -> None:
             continue
         rel = path.relative_to(args.sources).as_posix()
         for name in TARGETS:
-            if re.search(r"\\b(?:class|interface|enum)\\s+" + re.escape(name) + r"\\b", content):
-                class_hits[name].append(path)
+            if re.search(r"\b(?:class|interface|enum)\s+" + re.escape(name) + r"\b", content):
+                class_hits[name].append(rel)
         for token in EVENT_TOKENS:
             if token in content and len(token_files[token]) < 20:
                 token_files[token].append(rel)
         if "loadLibrary(" in content or "ReLinker.loadLibrary" in content:
             load_files.append(rel)
-        if re.search(r"\\bnative\\s+[^;]+;", content):
-            for match in re.findall(r"\\bnative\\s+[^;]+;", content):
-                native_methods.append(f"{rel}: {re.sub(r'\\s+', ' ', match).strip()[:180]}")
+        for match in re.findall(r"\bnative\s+[^;]+;", content):
+            normalized = re.sub(r"\s+", " ", match).strip()[:180]
+            native_methods.append(f"{rel}: {normalized}")
 
     with zipfile.ZipFile(args.apk) as archive:
-        libs = sorted(n for n in archive.namelist()
-                      if n.startswith("lib/") and n.endswith(".so"))
-        dex = sorted(n for n in archive.namelist()
-                     if re.fullmatch(r"classes(?:\\d+)?\\.dex", Path(n).name))
+        libs = sorted(
+            n for n in archive.namelist()
+            if n.startswith("lib/") and n.endswith(".so")
+        )
+        dex = sorted(
+            n for n in archive.namelist()
+            if re.fullmatch(r"classes(?:\d+)?\.dex", Path(n).name)
+        )
 
     lines = [
         "# تقرير التحليل الثابت المتعمق — Concepts 2022.04.10",
@@ -71,16 +77,19 @@ def main() -> None:
     ]
     for name, paths in class_hits.items():
         if paths:
-            lines.append(f"- `{name}`: " + "; ".join(
-                p.relative_to(args.sources).as_posix() for p in paths[:3]))
+            lines.append(f"- `{name}`: " + "; ".join(paths[:3]))
     lines += ["", "## مؤشرات أحداث اللمس والقلم"]
     for token, paths in token_files.items():
         if paths:
             lines.append(f"- `{token}`: " + "; ".join(paths[:5]))
     lines += ["", "## مواضع تحميل المكتبات"]
-    lines += [f"- {p}" for p in load_files[:30]] or ["- لم يظهر استدعاء تحميل في ملفات Java المفكوكة."]
+    lines += [f"- {p}" for p in load_files[:30]] or [
+        "- لم يظهر استدعاء تحميل في ملفات Java المفكوكة."
+    ]
     lines += ["", "## تصريحات native التي أمكن قراءتها"]
-    lines += [f"- {m}" for m in native_methods[:60]] or ["- لم تُستخرج تصريحات native قابلة للقراءة."]
+    lines += [f"- {m}" for m in native_methods[:60]] or [
+        "- لم تُستخرج تصريحات native قابلة للقراءة."
+    ]
     lines += ["", "## جرد المكتبات حسب ABI"]
     by_abi: dict[str, list[str]] = {}
     for lib in libs:
@@ -98,7 +107,8 @@ def main() -> None:
         "",
     ]
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text("\\n".join(lines), encoding="utf-8")
+    args.output.write_text("\n".join(lines), encoding="utf-8")
+
 
 if __name__ == "__main__":
     main()
