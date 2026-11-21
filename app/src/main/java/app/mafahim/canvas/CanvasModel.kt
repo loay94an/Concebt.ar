@@ -14,7 +14,8 @@ data class DrawingLayer(
     val id: String,
     val name: String,
     val visible: Boolean = true,
-    val opacity: Float = 1f
+    val opacity: Float = 1f,
+    val locked: Boolean = false
 )
 
 data class DrawStroke(
