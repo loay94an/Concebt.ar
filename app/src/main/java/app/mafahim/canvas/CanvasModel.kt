@@ -43,5 +43,8 @@ object CanvasGeometry {
         return CanvasPoint((screen.x - panX) / safeZoom, (screen.y - panY) / safeZoom)
     }
 
-    fun distance(a: CanvasPoint, b: CanvasPoint): Float = hypot(a.x - b.x, a.y - b.y)\n\n    fun normalizedPressure(value: Float): Float =\n        (if (value.isFinite()) value else 1f).coerceIn(0.05f, 1f)
+    fun distance(a: CanvasPoint, b: CanvasPoint): Float = hypot(a.x - b.x, a.y - b.y)
+
+    fun normalizedPressure(value: Float): Float =
+        (if (value.isFinite()) value else 1f).coerceIn(0.05f, 1f)
 }
