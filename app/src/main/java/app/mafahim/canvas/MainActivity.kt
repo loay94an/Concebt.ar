@@ -259,6 +259,19 @@ private fun MafahimApp() {
                                     Toast.makeText(context, "تعذر إنشاء PDF", Toast.LENGTH_SHORT).show()
                                 }
                             }) { Text("PDF") }
+                            TextButton(onClick = {
+                                runCatching {
+                                    val uri = DxfExporter.export(context, document)
+                                    val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                                        type = "application/dxf"
+                                        putExtra(Intent.EXTRA_STREAM, uri)
+                                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                    }
+                                    context.startActivity(Intent.createChooser(shareIntent, "تصدير DXF"))
+                                }.onFailure {
+                                    Toast.makeText(context, "تعذر إنشاء DXF", Toast.LENGTH_SHORT).show()
+                                }
+                            }) { Text("DXF") }
                         }
                     }
 
