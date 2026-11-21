@@ -108,6 +108,10 @@ private fun MafahimApp() {
     var renameLayerName by remember { mutableStateOf("") }
     var galleryDialog by remember { mutableStateOf(false) }
     var artboardsDialog by remember { mutableStateOf(false) }
+    var pagesDialog by remember { mutableStateOf(false) }
+    var colorDialog by remember { mutableStateOf(false) }
+    var customColorHex by remember { mutableStateOf("#FF20242D") }
+    var clipboard by remember { mutableStateOf(CanvasClipboard()) }
     var documentList by remember { mutableStateOf(emptyList<DocumentSummary>()) }
     val scope = rememberCoroutineScope()
     var imageBitmaps by remember { mutableStateOf<Map<String, ImageBitmap>>(emptyMap()) }
@@ -120,10 +124,9 @@ private fun MafahimApp() {
 
     LaunchedEffect(Unit) {
         val saved = withContext(Dispatchers.IO) { repository.load() }
-        if (saved != null) {
-            document = saved
-            activeLayerId = saved.layers.firstOrNull()?.id ?: "layer-base"
-        }
+        val initial = CanvasPageEngine.normalized(saved ?: DrawingDocument.empty())
+        document = initial
+        activeLayerId = initial.layers.firstOrNull()?.id ?: "layer-base"
         documentList = withContext(Dispatchers.IO) { repository.listDocuments() }
         loaded = true
     }
@@ -389,7 +392,7 @@ private fun MafahimApp() {
                                                 previousSpan = 0f
                                                 if (activeTool == BrushTool.SELECT) {
                                                     val hit = pointAt(0)
-                                                    canvasSelection = CanvasSelectionEngine.hitTest(document, hit.x, hit.y, 12f / currentZoom.coerceAtLeast(0.2f))
+                                                    canvasSelection = CanvasEditingEngine.toggleSelection(canvasSelection, CanvasSelectionEngine.hitTest(document, hit.x, hit.y, 12f / currentZoom.coerceAtLeast(0.2f)))
                                                 } else if (activeTool == BrushTool.GUIDE) {
                                                     val anchor = pointAt(0)
                                                     applyDocument(document.copy(guides = document.guides + ShapeGuide(UUID.randomUUID().toString(), ShapeGuideType.LINE, anchor, guideAngleDegrees)))
@@ -471,7 +474,8 @@ private fun MafahimApp() {
                                         true
                                     }
                             ) {
-                                drawRect(Color(0xFFFCFCFA))
+                                val pageBackground = document.pages.firstOrNull { it.id == document.activePageId }?.backgroundColor ?: 0xFFFCFCFA.toInt()
+                                drawRect(Color(if (document.artboards.none { it.visible }) pageBackground else 0xFFFCFCFA.toInt()))
                                 document.artboards.filter { it.visible }.forEach { artboard ->
                                     val topLeft = Offset(artboard.x * zoom + pan.x, artboard.y * zoom + pan.y)
                                     val boardSize = Size(artboard.width * zoom, artboard.height * zoom)
@@ -626,7 +630,22 @@ private fun MafahimApp() {
                             TextButton(onClick = { guideAngleDegrees = if (guideAngleDegrees == 0f) 90f else 0f }) { Text(if (guideAngleDegrees == 0f) "دليل أفقي" else "دليل رأسي") }
                             TextButton(onClick = { measurementUnit = MeasurementUnit.entries[(measurementUnit.ordinal + 1) % MeasurementUnit.entries.size] }) { Text("وحدة: ${measurementUnit.symbol}") }
                             TextButton(onClick = { applyDocument(document.copy(guides = emptyList())) }) { Text("مسح الأدلة") }
+                            TextButton(onClick = { canvasSelection = CanvasEditingEngine.selectAll(document) }) { Text("تحديد الكل") }
+                            if (!clipboard.isEmpty) {
+                                TextButton(onClick = {
+                                    val (next, selection) = CanvasEditingEngine.paste(document, clipboard)
+                                    applyDocument(next)
+                                    canvasSelection = selection
+                                }) { Text("لصق") }
+                            }
                             if (!canvasSelection.isEmpty) {
+                                TextButton(onClick = { clipboard = CanvasEditingEngine.copy(document, canvasSelection) }) { Text("نسخ") }
+                                TextButton(onClick = {
+                                    val (next, copied) = CanvasEditingEngine.cut(document, canvasSelection)
+                                    clipboard = copied
+                                    applyDocument(next)
+                                    canvasSelection = CanvasSelection()
+                                }) { Text("قص") }
                                 TextButton(onClick = { applyDocument(CanvasSelectionEngine.transform(document, canvasSelection, SelectionTransform(translateX = -10f))) }) { Text("←") }
                                 TextButton(onClick = { applyDocument(CanvasSelectionEngine.transform(document, canvasSelection, SelectionTransform(translateX = 10f))) }) { Text("→") }
                                 TextButton(onClick = { applyDocument(CanvasSelectionEngine.transform(document, canvasSelection, SelectionTransform(translateY = -10f))) }) { Text("↑") }
@@ -635,7 +654,7 @@ private fun MafahimApp() {
                                 TextButton(onClick = { applyDocument(CanvasSelectionEngine.transform(document, canvasSelection, SelectionTransform(scaleX = 0.9f, scaleY = 0.9f))) }) { Text("تصغير") }
                                 TextButton(onClick = { applyDocument(CanvasSelectionEngine.transform(document, canvasSelection, SelectionTransform(rotationDegrees = 15f))) }) { Text("↻") }
                                 TextButton(onClick = {
-                                    applyDocument(document.copy(strokes = document.strokes.filterNot { it.id in canvasSelection.strokeIds }, images = document.images.filterNot { it.id in canvasSelection.imageIds }))
+                                    applyDocument(CanvasEditingEngine.delete(document, canvasSelection))
                                     canvasSelection = CanvasSelection()
                                 }) { Text("حذف") }
                             }
@@ -663,6 +682,7 @@ private fun MafahimApp() {
                                     )
                                 }
                             }
+                            TextButton(onClick = { customColorHex = CanvasColorEngine.hex(selectedColor); colorDialog = true }) { Text("مخصص") }
                             Text("${brushWidth.toInt()} px", fontSize = 11.sp)
                         }
                         Slider(
@@ -681,6 +701,7 @@ private fun MafahimApp() {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             TextButton(onClick = { layersDialog = true }) { Text("الطبقات (${document.layers.size})") }
                             TextButton(onClick = { artboardsDialog = true }) { Text("اللوحات (${document.artboards.size})") }
+                            TextButton(onClick = { pagesDialog = true }) { Text("الصفحات (${document.pages.size})") }
                         }
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             TextButton(onClick = { zoom = (zoom / 1.2f).coerceIn(0.25f, 5f) }) { Text("−") }
@@ -783,6 +804,72 @@ private fun MafahimApp() {
         )
     }
 
+    if (pagesDialog) {
+        AlertDialog(
+            onDismissRequest = { pagesDialog = false },
+            title = { Text("إدارة الصفحات") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    document.pages.forEach { page ->
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            RadioButton(
+                                selected = document.activePageId == page.id,
+                                onClick = {
+                                    val next = CanvasPageEngine.activate(document, page.id)
+                                    applyDocument(next)
+                                    activeLayerId = next.layers.firstOrNull()?.id ?: "layer-base"
+                                    canvasSelection = CanvasSelection()
+                                }
+                            )
+                            Text(page.name, modifier = Modifier.weight(1f), maxLines = 1)
+                            TextButton(onClick = {
+                                val next = CanvasPageEngine.duplicate(document, page.id)
+                                applyDocument(next)
+                                activeLayerId = next.layers.firstOrNull()?.id ?: "layer-base"
+                            }) { Text("نسخ") }
+                        }
+                    }
+                    Text("كل صفحة تحتفظ بطبقاتها ورسوماتها وصورها وأدلتها.")
+                }
+            },
+            confirmButton = {
+                Button(onClick = {
+                    val next = CanvasPageEngine.create(document, "الصفحة ${document.pages.size + 1}")
+                    applyDocument(next)
+                    activeLayerId = next.layers.firstOrNull()?.id ?: "layer-base"
+                    canvasSelection = CanvasSelection()
+                }) { Text("إضافة صفحة") }
+            },
+            dismissButton = { TextButton(onClick = { pagesDialog = false }) { Text("إغلاق") } }
+        )
+    }
+
+    if (colorDialog) {
+        AlertDialog(
+            onDismissRequest = { colorDialog = false },
+            title = { Text("لون مخصص وخلفية الصفحة") },
+            text = {
+                androidx.compose.material3.OutlinedTextField(
+                    value = customColorHex,
+                    onValueChange = { customColorHex = it.take(9) },
+                    singleLine = true,
+                    label = { Text("HEX مثل #FF336699") }
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    val parsed = CanvasColorEngine.parseHex(customColorHex)
+                    if (parsed != null) {
+                        selectedColor = parsed
+                        applyDocument(CanvasColorEngine.applyBackground(document, parsed))
+                        colorDialog = false
+                    } else Toast.makeText(context, "صيغة اللون غير صحيحة", Toast.LENGTH_SHORT).show()
+                }) { Text("تطبيق اللون والخلفية") }
+            },
+            dismissButton = { TextButton(onClick = { colorDialog = false }) { Text("إلغاء") } }
+        )
+    }
+
     if (artboardsDialog) {
         AlertDialog(
             onDismissRequest = { artboardsDialog = false },
@@ -852,7 +939,7 @@ private fun MafahimApp() {
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Button(onClick = {
-                        document = DrawingDocument.empty()
+                        document = CanvasPageEngine.normalized(DrawingDocument.empty())
                         activeLayerId = document.layers.first().id
                         undoStack.clear()
                         redoStack.clear()
