@@ -118,3 +118,366 @@
 - هذا تقرير أسماء أصناف ومؤشرات API وجرد مكتبات؛ لا يعيد نشر الشيفرة المفكوكة أو الأصول.
 - وجود اسم API أو صنف لا يثبت وحده أنه مستخدم في مسار التشغيل الفعلي.
 - لم يُشغّل APK؛ يلزم تحليل JNI وربط الرموز الثنائية ثم اختبار التطبيق العربي على أجهزة فعلية.
+
+
+## تحليل ELF وJNI للمكتبات الأصلية
+- عدد المكتبات الثنائية داخل APK: 90
+- جرى فحص بيانات ELF والرموز العامة والسلاسل النصية ذات الصلة؛ لم تُنشر أي مكتبة ثنائية.
+- ABI الموجودة: armeabi-v7a
+
+### lib/armeabi-v7a/librsjni.so
+- ELF class: ELF32
+- Architecture: ARM
+- Exported JNI-related symbols:
+  - `JNI_OnLoad`
+- Relevant native strings (indicators only):
+  - librsjni.so
+  - AndroidBitmap_getInfo
+  - AndroidBitmap_lockPixels
+  - AndroidBitmap_unlockPixels
+  - JNI_OnLoad
+  - libjnigraphics.so
+  - android/support/v8/renderscript/RenderScript
+  - rsnAllocationCreateFromBitmap
+  - (JJILandroid/graphics/Bitmap;I)J
+  - rsnAllocationCreateBitmapBackedAllocation
+  - rsnAllocationCubeCreateFromBitmap
+  - rsnAllocationCopyFromBitmap
+  - (JJLandroid/graphics/Bitmap;)V
+  - rsnAllocationCopyToBitmap
+  - rsnScriptGroupSetInput
+  - RenderScript JNI
+  - couldn't dlopen %s; librsjni version: %d
+  - Dispatch table init failed! librsjni version: %d
+  - Couldn't load libRSSupportIO.so, librsjni version: %d
+  - libRSSupportIO init failed! librsjni version: %d
+  - At least one input required.
+  - couldn't dlopen %s;  librsjni version: %d
+  - Dispatch Table init failed! librsjni version: %d
+  - rsAllocationCopyToBitmap
+  - rsAllocationCreateFromBitmap
+  - rsAllocationCubeCreateFromBitmap
+  - rsScriptGroupSetInput
+  - rsProgramBindTexture
+  - Couldn't initialize dispatchTab.AllocationCreateFromBitmap
+  - Couldn't initialize dispatchTab.AllocationCubeCreateFromBitmap
+  - Couldn't initialize dispatchTab.AllocationCopyToBitmap
+  - Couldn't initialize dispatchTab.ScriptGroupSetInput
+
+### lib/armeabi-v7a/librsjni_androidx.so
+- ELF class: ELF32
+- Architecture: ARM
+- Exported JNI-related symbols:
+  - `JNI_OnLoad`
+- Relevant native strings (indicators only):
+  - libjnigraphics.so
+  - librsjni.so
+  - AndroidBitmap_getInfo
+  - AndroidBitmap_lockPixels
+  - AndroidBitmap_unlockPixels
+  - JNI_OnLoad
+  - couldn't dlopen %s;  librsjni version: %d
+  - Couldn't initialize dispatchTab.AllocationCreateFromBitmap
+  - androidx/renderscript/RenderScript
+  - rsnAllocationCreateFromBitmap
+  - At least one input required.
+  - Couldn't initialize dispatchTab.AllocationCopyToBitmap
+  - rsnAllocationCubeCreateFromBitmap
+  - rsProgramBindTexture
+  - Couldn't load libRSSupportIO.so, librsjni version: %d
+  - Dispatch Table init failed! librsjni version: %d
+  - Couldn't initialize dispatchTab.AllocationCubeCreateFromBitmap
+  - couldn't dlopen %s; librsjni version: %d
+  - (JJLandroid/graphics/Bitmap;)V
+  - RenderScript JNI
+  - rsnAllocationCopyToBitmap
+  - rsnScriptGroupSetInput
+  - rsAllocationCubeCreateFromBitmap
+  - (JJILandroid/graphics/Bitmap;I)J
+  - rsnAllocationCopyFromBitmap
+  - rsAllocationCopyToBitmap
+  - rsAllocationCreateFromBitmap
+  - rsScriptGroupSetInput
+  - rsnAllocationCreateBitmapBackedAllocation
+  - Dispatch table init failed! librsjni version: %d
+  - libRSSupportIO init failed! librsjni version: %d
+  - Couldn't initialize dispatchTab.ScriptGroupSetInput
+
+### lib/armeabi-v7a/libCore.so
+- ELF class: ELF32
+- Architecture: ARM
+- Exported JNI-related symbols:
+  - `Java_com_tophatch_concepts_core_NativeCanvasExportController_availableRegionsImpl`
+  - `Java_com_tophatch_concepts_core_NativeCanvasTransformController_setZoomSnapEnabledImpl`
+  - `Java_com_tophatch_concepts_core_NativeCanvasArtboardController_centerOnScreenImpl`
+  - `Java_com_tophatch_concepts_core_NativeCanvasStatusBarController_removeListenerImpl`
+  - `Java_com_tophatch_concepts_core_NativeCanvasStatusBarController_endEditImpl`
+  - `Java_com_tophatch_concepts_core_NativeCanvasGridController_setDivisionCountImpl`
+  - `Java_com_tophatch_concepts_core_NativeStylusManager_getConnectedStylus`
+  - `Java_com_tophatch_concepts_core_NativePDFRenderTask_dispose`
+  - `Java_com_tophatch_concepts_core_NativeCanvas_getControllerImpl`
+  - `Java_com_tophatch_concepts_core_NativeCanvasInputController_getSecondaryButtonActionImpl`
+  - `Java_com_tophatch_concepts_core_NativeCanvasNudgeController_addListenerImpl`
+  - `Java_com_tophatch_concepts_core_NativeCanvas_setRefreshRateImpl`
+  - `Java_com_tophatch_concepts_core_NativeCloud_closeReplicator`
+  - `Java_com_tophatch_concepts_core_NativeCanvasGridController_setWeightImpl`
+  - `Java_com_tophatch_concepts_core_NativeCanvasNudgeController_getStateImpl`
+  - `Java_com_tophatch_concepts_core_NativeCanvasSelectionController_dismissImpl`
+  - `Java_com_tophatch_concepts_core_NativeCanvasController_getSnapControllerImpl`
+  - `Java_com_tophatch_concepts_core_NativeCanvasArtboardController_setToScreenImpl`
+  - `Java_com_tophatch_concepts_core_NativeFingerActionProperty_setThicknessImpl`
+  - `Java_com_tophatch_concepts_core_NativeCanvasGridController_getDivisionCountImpl`
+  - `Java_com_tophatch_concepts_core_Engine_dispose`
+  - `Java_com_tophatch_concepts_core_NativeCanvasSnapController_isEnabledImpl`
+  - `Java_com_tophatch_concepts_core_NativeCanvasExportController_fileExtensionImpl`
+  - `Java_com_tophatch_concepts_core_NativeCanvasController_getDebugControllerImpl`
+  - `Java_com_tophatch_concepts_core_NativeCloud_getUserSettings`
+  - `Java_com_tophatch_concepts_core_NativeCanvasSnapController_setActiveLayerDrawingEnabledImpl`
+  - `Java_com_tophatch_concepts_core_NativeCloud_confirmChangeEmail`
+  - `Java_com_tophatch_concepts_core_NativeCanvasGridController_setConstrainToArtboardImpl`
+  - `Java_com_tophatch_concepts_core_NativeCanvasController_getDocumentControllerImpl`
+  - `Java_com_tophatch_concepts_core_NativeCanvasLayerController_deselectLayerImpl`
+  - `Java_com_tophatch_concepts_core_NativeCanvasStatusBarController_resetImpl`
+  - `Java_com_tophatch_concepts_core_NativeAuxiliaryButtonActionProperty_getStateImpl`
+  - `Java_com_tophatch_concepts_core_NativePDFHandle_getPageAspectRatio`
+  - `Java_com_tophatch_concepts_core_NativeAnalytics_logEvent`
+  - `Java_com_tophatch_concepts_core_NativeCanvasInputController_setLongPressBehaviorImpl`
+  - `Java_com_tophatch_concepts_core_NativeCanvasExportController_exportRasterPDFImpl`
+  - `Java_com_tophatch_concepts_core_NativeCanvasExportController_exportPSDImpl`
+  - `Java_com_tophatch_concepts_core_NativePDFHandle_getPageSizePts`
+  - `Java_com_tophatch_concepts_core_NativeCanvasPickerController_addListenerImpl`
+  - `Java_com_tophatch_concepts_core_NativeCanvasInputController_getDragPositionImpl`
+  - `Java_com_tophatch_concepts_core_NativeCanvasGridController_setGridPresetImpl`
+  - `Java_com_tophatch_concepts_core_NativeCanvasPickerController_getColorPickerStateImpl`
+  - `Java_com_tophatch_concepts_core_NativeUserSettings_addInterest`
+  - `Java_com_tophatch_concepts_core_NativeCanvasSliceController_setMenuStateImpl`
+  - `Java_com_tophatch_concepts_core_NativeCanvasSelectionController_removeListenerImpl`
+  - `Java_com_tophatch_concepts_core_NativeCanvasShapeGuideController_setKindImpl`
+  - `Java_com_tophatch_concepts_core_NativeCanvasController_getToolControllerImpl`
+  - `Java_com_tophatch_concepts_core_NativePDFHandle_getIdentifier`
+  - `Java_com_tophatch_concepts_core_NativeAccountManager_hasValidLicense`
+  - `Java_com_tophatch_concepts_core_NativeCanvasInputController_getFingerActionImpl`
+  - `Java_com_tophatch_concepts_core_NativeCanvasExportController_safePPIImpl`
+  - `Java_com_tophatch_concepts_core_NativeCanvasStatusBarController_updateEditImpl`
+  - `Java_com_tophatch_concepts_core_NativeCanvasPickerController_setIgnoreAlphaImpl`
+  - `Java_com_tophatch_concepts_core_NativeCanvasGridController_getMinMaxMajorSpacingImpl`
+  - `Java_com_tophatch_concepts_core_NativeCanvasBackgroundController_typeImpl`
+  - `Java_com_tophatch_concepts_core_NativeCanvasSnapController_isAlignToGridDrawingEnabledImpl`
+  - `Java_com_tophatch_concepts_core_NativeCanvasSnapController_addListenerImpl`
+  - `Java_com_tophatch_concepts_core_NativeCanvasPDFPickerController_dismissImpl`
+  - `Java_com_tophatch_concepts_core_NativeCanvasController_getSliceControllerImpl`
+  - `Java_com_tophatch_concepts_core_NativeCanvasGridController_getMinorColorImpl`
+  - `Java_com_tophatch_concepts_core_NativeCanvasDebugController_indexImpl`
+  - `Java_com_tophatch_concepts_core_NativeCanvasGridController_getPerspectiveVanishingLineCountImpl`
+  - `Java_com_tophatch_concepts_core_NativeCanvasLayerController_isCompactImpl`
+  - `Java_com_tophatch_concepts_core_NativeCanvasPickerController_removeListenerImpl`
+  - `Java_com_tophatch_concepts_core_NativeUserSettings_save`
+  - `Java_com_tophatch_concepts_core_NativeCanvasToolController_removeListenerImpl`
+  - `Java_com_tophatch_concepts_core_NativeCanvasController_getSelectionControllerImpl`
+  - `Java_com_tophatch_concepts_core_NativeCanvasToolController_getToolBarSlotStateImpl`
+  - `Java_com_tophatch_concepts_core_NativeCanvasStatusBarController_addListenerImpl`
+  - `Java_com_tophatch_concepts_core_NativeCanvasLayerController_getLayeringModeImpl`
+  - `Java_com_tophatch_concepts_core_NativeCanvasLayerController_getLayerThumbnailSizeImpl`
+  - `Java_com_tophatch_concepts_core_NativeCanvasMeasurementController_getLocaleBaseUnitImpl`
+  - `Java_com_tophatch_concepts_core_NativeCanvasController_getGridControllerImpl`
+  - `Java_com_tophatch_concepts_core_NativeCanvasShapeGuideController_isAvailableImpl`
+  - `Java_com_tophatch_concepts_core_NativeCanvasRendererController_getGPUModelImpl`
+  - `Java_com_tophatch_concepts_core_NativeCanvasTransformController_setZoomEnabledImpl`
+  - `Java_com_tophatch_concepts_core_NativeHardwareInfo_getGPUDriver`
+  - `Java_com_tophatch_concepts_core_NativeCanvasLayerController_setActiveLayerImpl`
+  - `Java_com_tophatch_concepts_core_NativeStylusManager_triggerAction`
+  - `Java_com_tophatch_concepts_core_NativeEraserActionProperty_getStateImpl`
+  - `Java_com_tophatch_concepts_core_NativeCanvasGridController_getMinMaxPerspectiveVanishingLineCountImpl`
+  - `Java_com_tophatch_concepts_core_NativeCanvasBackgroundController_customColorImpl`
+  - `Java_com_tophatch_concepts_core_NativeAccountManager_setProperty`
+  - `Java_com_tophatch_concepts_core_NativeCanvasSliceController_getStateImpl`
+  - `Java_com_tophatch_concepts_core_NativeCanvasMeasurementController_convertToDrawingImpl`
+  - `Java_com_tophatch_concepts_core_NativeCanvasSnapController_setAutoCompleteDrawingEnabledImpl`
+  - `Java_com_tophatch_concepts_core_NativeCanvasLayerController_endOpacityUpdateImpl`
+  - `Java_com_tophatch_concepts_core_NativeCanvasExportController_isAvailableImpl`
+  - `Java_com_tophatch_concepts_core_NativeCloud_disableProxy`
+  - `Java_com_tophatch_concepts_core_NativeCanvasToolController_replaceActiveSlotToolImpl`
+  - `Java_com_tophatch_concepts_core_NativeCanvasArtboardController_getActiveNameImpl`
+  - `Java_com_tophatch_concepts_core_Engine_createCanvas`
+  - `Java_com_tophatch_concepts_core_NativePDFHandle_asyncRenderPage`
+  - `Java_com_tophatch_concepts_core_NativeCanvasNudgeController_getMenuStateImpl`
+  - `Java_com_tophatch_concepts_core_NativeCanvasShapeGuideController_setRotationEnabledImpl`
+  - `Java_com_tophatch_concepts_core_NativeEraserActionProperty_setThicknessImpl`
+  - `Java_com_tophatch_concepts_core_NativeCanvasExportController_canExportPDFBoundsImpl`
+  - `Java_com_tophatch_concepts_core_NativeAnalyticsNetworkListener_complete`
+  - `Java_com_tophatch_concepts_core_NativeCanvasStatusBarController_beginEditImpl`
+  - `Java_com_tophatch_concepts_core_NativeCanvasInterfaceController_addListenerImpl`
+- Relevant native strings (indicators only):
+  - _ZN2TH3JNI16unpackInputEventEPKdjRNSt6__ndk16vectorINS0_10InputPointENS3_9allocatorIS5_EEEE
+  - _ZNSt6__ndk16vectorIN2TH3JNI10InputPointENS_9allocatorIS3_EEE8__appendEj
+  - _ZN2TH3JNI10boxBooleanEb
+  - _ZN2TH3JNI10boxIntegerEi
+  - _ZN2TH3JNI10unboxFloatENS0_6RefArgIP8_jobjectEE
+  - _ZN2TH3JNI11boxIntArrayERNSt6__ndk16vectorIiNS1_9allocatorIiEEEE
+  - _ZN2TH3JNI11getMethodIdENS0_6RefArgIP7_jclassEEPKcS6_
+  - _ZN2TH3JNI11unboxDoubleENS0_6RefArgIP8_jobjectEE
+  - _ZN2TH3JNI11unboxStringENS0_6RefArgIP8_jobjectEE
+  - _ZN2TH3JNI12boxMapStringERNSt6__ndk13mapINS1_12basic_stringIcNS1_11char_traitsIcEENS1_9allocatorIcEEEES8_NS1_4lessIS8_EENS6_INS1_4pairIKS8_S8_EEEEEE
+  - _ZN2TH3JNI12unboxBooleanENS0_6RefArgIP8_jobjectEE
+  - _ZN2TH3JNI12unboxIntegerENS0_6RefArgIP8_jobjectEE
+  - _ZN2TH3JNI13callIntMethodENS0_6RefArgIP8_jobjectEEP10_jmethodIDz
+  - _ZN2TH3JNI14boxStringArrayERKNSt6__ndk16vectorINS1_12basic_stringIcNS1_11char_traitsIcEENS1_9allocatorIcEEEENS6_IS8_EEEE
+  - _ZN2TH3JNI14callLongMethodENS0_6RefArgIP8_jobjectEEP10_jmethodIDz
+  - _ZN2TH3JNI14exceptionCheckEv
+  - _ZN2TH3JNI15callFloatMethodENS0_6RefArgIP8_jobjectEEP10_jmethodIDz
+  - _ZN2TH3JNI16callDoubleMethodENS0_6RefArgIP8_jobjectEEP10_jmethodIDz
+  - _ZN2TH3JNI16callObjectMethodIP8_jobjectEENS0_8LocalRefIT_EENS0_6RefArgIS3_EEP10_jmethodIDz
+  - _ZN2TH3JNI16getStaticFieldIdENS0_6RefArgIP7_jclassEEPKcS6_
+  - _ZN2TH3JNI16unboxStringArrayENS0_6RefArgIP13_jobjectArrayEE
+  - _ZN2TH3JNI17callBooleanMethodENS0_6RefArgIP8_jobjectEEP10_jmethodIDz
+  - _ZN2TH3JNI19boxDirectByteBufferERKNS_6BufferINS_3Mem6Buffer6OpaqueILNS2_10CapabilityE0ELj16EEEEE
+  - _ZN2TH3JNI21unboxDirectByteBufferENS0_6RefArgIP8_jobjectEE
+  - _ZN2TH3JNI7boxLongEx
+  - _ZN2TH3JNI7boxUUIDENS_4UUIDE
+  - _ZN2TH3JNI8boxFloatEf
+  - _ZN2TH3JNI8getClassEPKc
+  - _ZN2TH3JNI9boxDoubleEd
+  - _ZN2TH3JNI9boxStringEPKc
+  - _ZN2TH3JNI9boxStringERKNSt6__ndk112basic_stringIcNS1_11char_traitsIcEENS1_9allocatorIcEEEE
+  - _ZN2TH3JNI9newObjectIP8_jobjectEENS0_8LocalRefIT_EENS0_6RefArgIP7_jclassEEP10_jmethodIDz
+  - _ZN2TH3JNI9unboxLongENS0_6RefArgIP8_jobjectEE
+  - _ZN2TH3JNI9unboxUUIDENS0_6RefArgIP8_jobjectEE
+  - _ZTHN2TH3JNI4gEnvE
+  - __emutls_v._ZN2TH3JNI4gEnvE
+  - _ZN2TH3JNI7gJavaVME
+  - __emutls_t._ZN2TH3JNI4gEnvE
+  - _ZN2TH3JNI10getFieldIdENS0_6RefArgIP7_jclassEEPKcS6_
+  - _ZN2TH3JNI12getLongFieldENS0_6RefArgIP8_jobjectEEP9_jfieldID
+  - _ZN2TH3JNI12setLongFieldENS0_6RefArgIP8_jobjectEEP9_jfieldIDx
+  - _ZN2TH3JNI14getObjectClassENS0_6RefArgIP8_jobjectEE
+  - _ZN2TH3JNI16getNativeVoidPtrEP7_JNIEnvNS0_6RefArgIP8_jobjectEEPKc
+  - _ZN2TH3JNI16setNativeVoidPtrEP7_JNIEnvNS0_6RefArgIP8_jobjectEEPKcPv
+  - _ZN2TH3JNI11TypeAdapter3boxEPKv
+  - _ZN2TH3JNI11TypeAdapter5unboxENS0_6RefArgIP8_jobjectEEPv
+  - _ZN2TH3JNI11TypeAdapter7jniTypeEv
+  - _ZN2TH3JNI11TypeAdapterC1EPKNS_7TypeIdTE
+  - _ZN2TH3JNI11TypeAdapterC2EPKNS_7TypeIdTE
+  - _ZN2TH3JNI11getIntFieldENS0_6RefArgIP8_jobjectEEP9_jfieldID
+  - _ZN2TH3JNI11setIntFieldENS0_6RefArgIP8_jobjectEEP9_jfieldIDi
+  - _ZN2TH3JNI11typeAdapterEPKNS_7TypeIdTE
+  - _ZN2TH3JNI13getFloatFieldENS0_6RefArgIP8_jobjectEEP9_jfieldID
+  - _ZN2TH3JNI13setFloatFieldENS0_6RefArgIP8_jobjectEEP9_jfieldIDf
+  - _ZN2TH3JNI14getDoubleFieldENS0_6RefArgIP8_jobjectEEP9_jfieldID
+  - _ZN2TH3JNI14setDoubleFieldENS0_6RefArgIP8_jobjectEEP9_jfieldIDd
+  - _ZN2TH3JNI14setObjectFieldENS0_6RefArgIP8_jobjectEEP9_jfieldIDS4_
+  - _ZN2TH3JNI15getBooleanFieldENS0_6RefArgIP8_jobjectEEP9_jfieldID
+  - _ZN2TH3JNI15setBooleanFieldENS0_6RefArgIP8_jobjectEEP9_jfieldIDh
+  - _ZN2TH3JNI17getStaticMethodIdENS0_6RefArgIP7_jclassEEPKcS6_
+  - _ZN2TH3JNI22callStaticObjectMethodIP13_jobjectArrayEENS0_8LocalRefIT_EENS0_6RefArgIP7_jclassEEP10_jmethodIDz
+  - _ZN2TH9UniquePtrINS_3JNI10JNIEnumMapEED2Ev
+  - _ZZN2TH6typeIdINS_6Size1fINS_6Coords6SystemINS2_6RenderENS2_2DpEEEEEEEPKNS_7TypeIdTEvE10sTypeToken
+  - _ZZN2TH6typeIdINS_6Size1fINS_6Coords6SystemINS2_6RenderENS2_2PtEEEEEEEPKNS_7TypeIdTEvE10sTypeToken
+  - _ZZN2TH6typeIdINS_6Size1fINS_6Coords6SystemINS2_9PDFDeviceENS2_5PDFPtEEEEEEEPKNS_7TypeIdTEvE10sTypeToken
+  - _ZZN2TH6typeIdINS_7Point1fINS_6Coords6SystemINS2_6RenderENS2_2DpEEEEEEEPKNS_7TypeIdTEvE10sTypeToken
+  - _ZZN2TH6typeIdINS_8Vector1fINS_6Coords6SystemINS2_6RenderENS2_2DpEEEEEEEPKNS_7TypeIdTEvE10sTypeToken
+  - _ZN2TH3JNI11getMethodIdEP7_JNIEnvNS0_6RefArgIP7_jclassEEPKcS8_
+  - _ZN2TH3JNI12getByteFieldENS0_6RefArgIP8_jobjectEEP9_jfieldID
+  - _ZN2TH3JNI12getCharFieldENS0_6RefArgIP8_jobjectEEP9_jfieldID
+  - _ZN2TH3JNI12setByteFieldENS0_6RefArgIP8_jobjectEEP9_jfieldIDa
+  - _ZN2TH3JNI12setCharFieldENS0_6RefArgIP8_jobjectEEP9_jfieldIDt
+  - _ZN2TH3JNI13getShortFieldENS0_6RefArgIP8_jobjectEEP9_jfieldID
+  - _ZN2TH3JNI13setShortFieldENS0_6RefArgIP8_jobjectEEP9_jfieldIDs
+  - _ZN2TH3JNI14callByteMethodENS0_6RefArgIP8_jobjectEEP10_jmethodIDz
+  - _ZN2TH3JNI14callCharMethodENS0_6RefArgIP8_jobjectEEP10_jmethodIDz
+  - _ZN2TH3JNI14callVoidMethodENS0_6RefArgIP8_jobjectEEP10_jmethodIDz
+  - _ZN2TH3JNI14getObjectClassEP7_JNIEnvNS0_6RefArgIP8_jobjectEE
+  - _ZN2TH3JNI15callShortMethodENS0_6RefArgIP8_jobjectEEP10_jmethodIDz
+  - _ZN2TH3JNI17getStaticIntFieldENS0_6RefArgIP7_jclassEEP9_jfieldID
+
+### lib/armeabi-v7a/libpdfium.cr.so
+- ELF class: ELF32
+- Architecture: ARM
+- Exported JNI-related symbols:
+  - No directly exported Java_* symbols found; JNI may use RegisterNatives.
+- Relevant native strings (indicators only):
+  - FT_Render_Glyph
+  - FPDFAnnot_AppendAttachmentPoints
+  - FPDFAnnot_AppendObject
+  - FPDFAnnot_CountAttachmentPoints
+  - FPDFAnnot_GetAP
+  - FPDFAnnot_GetAttachmentPoints
+  - FPDFAnnot_GetColor
+  - FPDFAnnot_GetFlags
+  - FPDFAnnot_GetFocusableSubtypes
+  - FPDFAnnot_GetFocusableSubtypesCount
+  - FPDFAnnot_GetFontSize
+  - FPDFAnnot_GetFormFieldAtPoint
+  - FPDFAnnot_GetFormFieldFlags
+  - FPDFAnnot_GetFormFieldName
+  - FPDFAnnot_GetFormFieldType
+  - FPDFAnnot_GetFormFieldValue
+  - FPDFAnnot_GetLinkedAnnot
+  - FPDFAnnot_GetNumberValue
+  - FPDFAnnot_GetObject
+  - FPDFAnnot_GetObjectCount
+  - FPDFAnnot_GetOptionCount
+  - FPDFAnnot_GetOptionLabel
+  - FPDFAnnot_GetRect
+  - FPDFAnnot_GetStringValue
+  - FPDFAnnot_GetSubtype
+  - FPDFAnnot_GetValueType
+  - FPDFAnnot_HasAttachmentPoints
+  - FPDFAnnot_HasKey
+  - FPDFAnnot_IsChecked
+  - FPDFAnnot_IsObjectSupportedSubtype
+  - FPDFAnnot_IsSupportedSubtype
+  - FPDFAnnot_RemoveObject
+  - FPDFAnnot_SetAP
+  - FPDFAnnot_SetAttachmentPoints
+  - FPDFAnnot_SetColor
+  - FPDFAnnot_SetFlags
+  - FPDFAnnot_SetFocusableSubtypes
+  - FPDFAnnot_SetRect
+  - FPDFAnnot_SetStringValue
+  - FPDFAnnot_UpdateObject
+  - FPDFPage_CloseAnnot
+  - FPDFPage_CreateAnnot
+  - FPDFPage_GetAnnot
+  - FPDFPage_GetAnnotCount
+  - FPDFPage_GetAnnotIndex
+  - FPDFPage_RemoveAnnot
+  - FPDFAttachment_GetFile
+  - FPDFAttachment_GetName
+  - FPDFAttachment_GetStringValue
+  - FPDFAttachment_GetValueType
+  - FPDFAttachment_HasKey
+  - FPDFAttachment_SetFile
+  - FPDFAttachment_SetStringValue
+  - FPDFDoc_AddAttachment
+  - FPDFDoc_DeleteAttachment
+  - FPDFDoc_GetAttachment
+  - FPDFDoc_GetAttachmentCount
+  - FPDFCatalog_IsTagged
+  - FPDFAvail_Create
+  - FPDFAvail_Destroy
+  - FPDFAvail_GetDocument
+  - FPDFAvail_GetFirstPageNum
+  - FPDFAvail_IsDocAvail
+  - FPDFAvail_IsFormAvail
+  - FPDFAvail_IsLinearized
+  - FPDFAvail_IsPageAvail
+  - FPDFAction_GetDest
+  - FPDFAction_GetFilePath
+  - FPDFAction_GetType
+  - FPDFAction_GetURIPath
+  - FPDFBookmark_Find
+  - FPDFBookmark_GetAction
+  - FPDFBookmark_GetDest
+  - FPDFBookmark_GetFirstChild
+  - FPDFBookmark_GetNextSibling
+  - FPDFBookmark_GetTitle
+  - FPDFDest_GetDestPageIndex
+  - FPDFDest_GetLocationInPage
+  - FPDFDest_GetView
+  - FPDFLink_CountQuadPoints
+
+### قيود التحليل
+- غياب أسماء Java_* لا ينفي وجود JNI؛ قد يسجل المحرك الدوال ديناميكياً عبر RegisterNatives.
+- السلاسل النصية وأسماء الرموز قرائن وليست إثباتاً لسلوك الدوال.
+- العينة تحتوي مكتبات armeabi-v7a فقط وفق جرد APK؛ لا تتوفر مكتبات arm64-v8a ضمن هذه الحزمة.
+- إعادة استخدام libCore.so في تطبيق مستقل تتطلب توافق ABI وواجهة JNI والاعتمادات والترخيص؛ لم تُدمج المكتبة في التطبيق العربي.
