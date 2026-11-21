@@ -42,7 +42,8 @@ data class DrawingDocument(
     val layers: List<DrawingLayer>,
     val strokes: List<DrawStroke>,
     val id: String = UUID.randomUUID().toString(),
-    val images: List<DrawingImage> = emptyList()
+    val images: List<DrawingImage> = emptyList(),
+    val guides: List<ShapeGuide> = emptyList()
 ) {
     companion object {
         fun empty() = DrawingDocument(
