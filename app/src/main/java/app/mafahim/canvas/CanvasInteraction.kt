@@ -147,7 +147,7 @@ object CanvasSnapEngine {
                     options += CanvasPoint(guide.origin.x + along * ux, guide.origin.y + along * uy) to "guide:${guide.id}"
                 }
                 ShapeGuideType.GRID -> {
-                    val step = guide.spacing.takeIf { it.isFinite() && it > 0f } ?: continue
+                    val step = guide.spacing.takeIf { it.isFinite() && it > 0f } ?: return@forEach
                     options += CanvasPoint(
                         guide.origin.x + ((point.x - guide.origin.x) / step).roundToInt() * step,
                         guide.origin.y + ((point.y - guide.origin.y) / step).roundToInt() * step
