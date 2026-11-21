@@ -47,6 +47,7 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -69,6 +70,7 @@ import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.launch
 import java.util.UUID
 
 class MainActivity : ComponentActivity() {
@@ -92,6 +94,9 @@ private fun MafahimApp() {
     var zoom by remember { mutableStateOf(1f) }
     var pan by remember { mutableStateOf(Offset.Zero) }
     var layersDialog by remember { mutableStateOf(false) }
+    var galleryDialog by remember { mutableStateOf(false) }
+    var documentList by remember { mutableStateOf(emptyList<DocumentSummary>()) }
+    val scope = rememberCoroutineScope()
     val undoStack = remember { mutableStateListOf<DrawingDocument>() }
     val redoStack = remember { mutableStateListOf<DrawingDocument>() }
 
@@ -101,6 +106,7 @@ private fun MafahimApp() {
             document = saved
             activeLayerId = saved.layers.firstOrNull()?.id ?: "layer-base"
         }
+        documentList = withContext(Dispatchers.IO) { repository.listDocuments() }
         loaded = true
     }
 
@@ -108,6 +114,7 @@ private fun MafahimApp() {
         if (loaded) {
             delay(350)
             withContext(Dispatchers.IO) { repository.save(document) }
+            documentList = withContext(Dispatchers.IO) { repository.listDocuments() }
         }
     }
 
@@ -194,6 +201,7 @@ private fun MafahimApp() {
                                 }
                             }, enabled = redoStack.isNotEmpty()) { Text("↷", fontSize = 22.sp) }
                             TextButton(onClick = { darkMode = !darkMode }) { Text(if (darkMode) "☀" else "☾") }
+                            TextButton(onClick = { documentList = repository.listDocuments(); galleryDialog = true }) { Text("المستندات") }
                             TextButton(onClick = {
                                 runCatching {
                                     val uri = SvgExporter.export(context, document)
@@ -548,4 +556,59 @@ private fun MafahimApp() {
             dismissButton = { TextButton(onClick = { layersDialog = false }) { Text("إغلاق") } }
         )
     }
+
+    if (galleryDialog) {
+        AlertDialog(
+            onDismissRequest = { galleryDialog = false },
+            title = { Text("معرض المستندات") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Button(onClick = {
+                        document = DrawingDocument.empty()
+                        activeLayerId = document.layers.first().id
+                        undoStack.clear()
+                        redoStack.clear()
+                        galleryDialog = false
+                    }, modifier = Modifier.fillMaxWidth()) { Text("إنشاء لوحة جديدة") }
+                    if (documentList.isEmpty()) {
+                        Text("لا توجد لوحات محفوظة بعد")
+                    } else {
+                        documentList.forEach { item ->
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                TextButton(
+                                    onClick = {
+                                        scope.launch {
+                                            val opened = withContext(Dispatchers.IO) { repository.load(item.id) }
+                                            if (opened != null) {
+                                                document = opened
+                                                activeLayerId = opened.layers.firstOrNull()?.id ?: "layer-base"
+                                                undoStack.clear()
+                                                redoStack.clear()
+                                            }
+                                            galleryDialog = false
+                                        }
+                                    },
+                                    modifier = Modifier.weight(1f)
+                                ) { Text(item.title, maxLines = 1) }
+                                TextButton(onClick = {
+                                    scope.launch {
+                                        withContext(Dispatchers.IO) { repository.delete(item.id) }
+                                        documentList = withContext(Dispatchers.IO) { repository.listDocuments() }
+                                        if (item.id == document.id) {
+                                            document = DrawingDocument.empty()
+                                            activeLayerId = document.layers.first().id
+                                            undoStack.clear()
+                                            redoStack.clear()
+                                        }
+                                    }
+                                }) { Text("حذف") }
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = { TextButton(onClick = { galleryDialog = false }) { Text("إغلاق") } }
+        )
+    }
+}
 }
