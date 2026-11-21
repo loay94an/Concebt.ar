@@ -1,6 +1,9 @@
 package app.mafahim.canvas
 
 import android.content.Context
+import android.net.Uri
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import java.io.BufferedInputStream
 import java.io.BufferedOutputStream
 import java.io.DataInputStream
@@ -12,16 +15,39 @@ import java.nio.file.AtomicMoveNotSupportedException
 import java.nio.file.Files
 import java.nio.file.StandardCopyOption
 import java.util.UUID
+import java.io.FileOutputStream
 
 data class DocumentSummary(val id: String, val title: String, val modifiedAt: Long)
 
 class DocumentRepository(context: Context) {
+    private val appContext = context.applicationContext
+    private val imagesDir = File(context.filesDir, "images")
     private val documentsDir = File(context.filesDir, "documents")
     private val legacyTarget = File(context.filesDir, "mafahim-document.mfd")
 
     private fun targetFor(id: String) = File(documentsDir, safeId(id) + ".mfd")
     private fun temporaryFor(id: String) = File(documentsDir, safeId(id) + ".mfd.tmp")
     private fun safeId(id: String) = id.filter { it.isLetterOrDigit() || it == '-' || it == '_' }.take(80).ifBlank { UUID.randomUUID().toString() }
+
+    fun importImage(uri: Uri): DrawingImage? = runCatching {
+        imagesDir.mkdirs()
+        val bitmap = appContext.contentResolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it) }
+            ?: return null
+        val ratio = minOf(1f, 2400f / maxOf(bitmap.width, bitmap.height).toFloat())
+        val scaled = if (ratio < 1f) Bitmap.createScaledBitmap(bitmap,
+            (bitmap.width * ratio).toInt().coerceAtLeast(1),
+            (bitmap.height * ratio).toInt().coerceAtLeast(1), true) else bitmap
+        val id = UUID.randomUUID().toString()
+        val name = "$id.png"
+        FileOutputStream(File(imagesDir, name)).use { scaled.compress(Bitmap.CompressFormat.PNG, 100, it) }
+        if (scaled !== bitmap) { scaled.recycle(); bitmap.recycle() }
+        DrawingImage(id, name, 60f, 60f, scaled.width.toFloat(), scaled.height.toFloat())
+    }.getOrNull()
+
+    fun loadImage(fileName: String): Bitmap? {
+        val safeName = File(fileName).name
+        return BitmapFactory.decodeFile(File(imagesDir, safeName).absolutePath)
+    }
 
     @Synchronized
     fun save(document: DrawingDocument) {
@@ -63,6 +89,15 @@ class DocumentRepository(context: Context) {
                     output.writeFloat(point.tilt.finiteOr(0f).coerceIn(0f, 1.5707964f))
                     output.writeFloat(point.orientation.finiteOr(0f).coerceIn(-3.1415927f, 3.1415927f))
                 }
+            }
+            val images = document.images.take(MAX_IMAGES)
+            output.writeInt(images.size)
+            images.forEach { image ->
+                output.writeUTF(File(image.fileName).name.take(MAX_TEXT))
+                output.writeFloat(image.x.finiteOr(0f))
+                output.writeFloat(image.y.finiteOr(0f))
+                output.writeFloat(image.width.finiteOr(1f).coerceIn(1f, 10000f))
+                output.writeFloat(image.height.finiteOr(1f).coerceIn(1f, 10000f))
             }
             output.flush()
         }
@@ -140,7 +175,19 @@ class DocumentRepository(context: Context) {
                     }
                     DrawStroke(id, layerId, tool, color, width, opacity, points)
                 }
-                DrawingDocument(title, layers, strokes, documentId)
+                val images = if (formatVersion >= 5) {
+                    val count = input.readInt()
+                    require(count in 0..MAX_IMAGES) { "عدد الصور غير صالح" }
+                    List(count) {
+                        val fileName = File(input.readUTF()).name
+                        val x = input.readFloat().finiteOr(0f)
+                        val y = input.readFloat().finiteOr(0f)
+                        val width = input.readFloat().finiteOr(1f).coerceIn(1f, 10000f)
+                        val height = input.readFloat().finiteOr(1f).coerceIn(1f, 10000f)
+                        DrawingImage(fileName.removeSuffix(".png"), fileName, x, y, width, height)
+                    }
+                } else emptyList()
+                DrawingDocument(title, layers, strokes, documentId, images)
             }
         }.getOrNull()
     }
@@ -149,10 +196,11 @@ class DocumentRepository(context: Context) {
 
     companion object {
         private const val MAGIC = 0x4D464D31
-        private const val FORMAT_VERSION = 4
+        private const val FORMAT_VERSION = 5
         private const val MAX_TEXT = 256
         private const val MAX_LAYERS = 128
         private const val MAX_STROKES = 100_000
         private const val MAX_POINTS = 50_000
+        private const val MAX_IMAGES = 256
     }
 }
