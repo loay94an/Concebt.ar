@@ -22,6 +22,6 @@ class ImageEditStateTest {
         assertTrue(cropped.hitTest(50f, 60f))
     }
     @Test fun disjointCropBecomesEmpty() {
-        assertNull(initial.setCrop(ImageRect(300f, 300f, 400f, 400f)).crop)
+        val emptyCrop = initial.setCrop(ImageRect(300f, 300f, 400f, 400f))\n        assertEquals(0f, emptyCrop.visibleBounds.width, 0.001f)\n        assertFalse(emptyCrop.hitTest(50f, 50f))
     }
 }
