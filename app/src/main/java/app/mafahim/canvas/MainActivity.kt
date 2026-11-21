@@ -225,7 +225,7 @@ private fun MafahimApp() {
                                                 val startZoom = currentZoom
                                                 val points = mutableListOf(
                                                     CanvasGeometry.toWorld(
-                                                        CanvasPoint(down.position.x, down.position.y),
+                                                        CanvasPoint(down.position.x, down.position.y, down.pressure),
                                                         startZoom, startPan.x, startPan.y
                                                     )
                                                 )
@@ -235,7 +235,7 @@ private fun MafahimApp() {
                                                     if (!change.pressed) break
                                                     points.add(
                                                         CanvasGeometry.toWorld(
-                                                            CanvasPoint(change.position.x, change.position.y),
+                                                            CanvasPoint(change.position.x, change.position.y, change.pressure),
                                                             startZoom, startPan.x, startPan.y
                                                         )
                                                     )
@@ -287,25 +287,23 @@ private fun MafahimApp() {
                                     )
                                     val mapped = stroke.points.map { Offset(it.x * zoom + pan.x, it.y * zoom + pan.y) }
                                     if (mapped.size == 1) {
+                                        val pressure = stroke.points.first().pressure.coerceIn(0.05f, 1f)
                                         drawCircle(
                                             color,
-                                            radius = (stroke.width * zoom / 2f).coerceAtLeast(0.5f),
+                                            radius = (stroke.width * pressure * zoom / 2f).coerceAtLeast(0.5f),
                                             center = mapped.first()
                                         )
                                     } else {
-                                        val path = Path().apply {
-                                            moveTo(mapped.first().x, mapped.first().y)
-                                            mapped.drop(1).forEach { lineTo(it.x, it.y) }
-                                        }
-                                        drawPath(
-                                            path = path,
-                                            color = color,
-                                            style = Stroke(
-                                                width = (stroke.width * zoom).coerceAtLeast(0.5f),
-                                                cap = StrokeCap.Round,
-                                                join = StrokeJoin.Round
+                                        stroke.points.zipWithNext().forEachIndexed { index, pair ->
+                                            val pressure = ((pair.first.pressure + pair.second.pressure) / 2f).coerceIn(0.05f, 1f)
+                                            drawLine(
+                                                color = color,
+                                                start = mapped[index],
+                                                end = mapped[index + 1],
+                                                strokeWidth = (stroke.width * pressure * zoom).coerceAtLeast(0.5f),
+                                                cap = StrokeCap.Round
                                             )
-                                        )
+                                        }
                                     }
                                 }
                             }
