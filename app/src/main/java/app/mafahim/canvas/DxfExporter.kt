@@ -15,7 +15,7 @@ object DxfExporter {
 
     internal fun buildDxf(document: DrawingDocument): String = buildString {
         appendLine("0"); appendLine("SECTION"); appendLine("2"); appendLine("HEADER")
-        appendLine("9"); appendLine("$ACADVER"); appendLine("1"); appendLine("AC1015")
+        appendLine("9"); appendLine("\$ACADVER"); appendLine("1"); appendLine("AC1015")
         appendLine("0"); appendLine("ENDSEC")
         val layers = document.layers.filter { it.visible }
         appendLine("0"); appendLine("SECTION"); appendLine("2"); appendLine("TABLES")
