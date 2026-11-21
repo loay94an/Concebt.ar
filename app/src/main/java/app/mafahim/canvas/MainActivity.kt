@@ -111,6 +111,7 @@ private fun MafahimApp() {
     var artboardsDialog by remember { mutableStateOf(false) }
     var pagesDialog by remember { mutableStateOf(false) }
     var colorDialog by remember { mutableStateOf(false) }
+    var brushLibraryDialog by remember { mutableStateOf(false) }
     var customColorHex by remember { mutableStateOf("#FF20242D") }
     var clipboard by remember { mutableStateOf(CanvasClipboard()) }
     var cropDialogImageId by remember { mutableStateOf<String?>(null) }
@@ -295,6 +296,7 @@ private fun MafahimApp() {
                         horizontalArrangement = Arrangement.spacedBy(7.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
+                        TextButton(onClick = { brushLibraryDialog = true }) { Text("✦ مكتبة الفرش") }
                         TextButton(onClick = { imagePicker.launch(arrayOf("image/*")) }) { Text("＋ صورة") }
                         TextButton(onClick = { layersDialog = true }) { Text("▤ الطبقات") }
                         TextButton(onClick = { pagesDialog = true }) { Text("▧ الصفحات") }
@@ -719,6 +721,64 @@ private fun MafahimApp() {
                 }
             }
         }
+    }
+
+    if (brushLibraryDialog) {
+        AlertDialog(
+            onDismissRequest = { brushLibraryDialog = false },
+            title = {
+                Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                    Text("مكتبة الفرش", fontWeight = FontWeight.Bold)
+                    Text("اختر أداة الرسم المناسبة لأسلوبك", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text("الفرش الأساسية", fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.primary)
+                    listOf(
+                        BrushTool.PEN to "قلم حبر",
+                        BrushTool.PENCIL to "قلم رصاص",
+                        BrushTool.MARKER to "قلم تحديد",
+                        BrushTool.ROUND_BRUSH to "فرشاة ناعمة",
+                        BrushTool.CHISEL to "قلم عريض",
+                        BrushTool.ERASER to "ممحاة"
+                    ).chunked(2).forEach { rowTools ->
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            rowTools.forEach { (tool, label) ->
+                                FilterChip(
+                                    modifier = Modifier.weight(1f),
+                                    selected = selectedTool == tool,
+                                    onClick = { selectedTool = tool; brushLibraryDialog = false },
+                                    label = { Text(label, fontSize = 12.sp) }
+                                )
+                            }
+                        }
+                    }
+                    androidx.compose.material3.HorizontalDivider()
+                    Text("أدوات الرسم والتحرير", fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.primary)
+                    listOf(
+                        BrushTool.LINE to "خط مستقيم",
+                        BrushTool.RECTANGLE to "مستطيل",
+                        BrushTool.ELLIPSE to "دائرة وبيضاوي",
+                        BrushTool.SELECT to "تحديد العناصر",
+                        BrushTool.MOVE to "تحريك اللوحة",
+                        BrushTool.GUIDE to "أدلة هندسية"
+                    ).chunked(2).forEach { rowTools ->
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            rowTools.forEach { (tool, label) ->
+                                FilterChip(
+                                    modifier = Modifier.weight(1f),
+                                    selected = selectedTool == tool,
+                                    onClick = { selectedTool = tool; brushLibraryDialog = false },
+                                    label = { Text(label, fontSize = 12.sp) }
+                                )
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = { TextButton(onClick = { brushLibraryDialog = false }) { Text("تم") } }
+        )
     }
 
     if (layersDialog) {
