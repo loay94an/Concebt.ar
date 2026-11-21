@@ -812,6 +812,48 @@ private fun MafahimApp() {
         )
     }
 
+    if (cropDialogImageId != null) {
+        val sourceImage = document.images.firstOrNull { it.id == cropDialogImageId }
+        val sourceBitmap = sourceImage?.let { imageBitmaps[it.fileName] }
+        AlertDialog(
+            onDismissRequest = { cropDialogImageId = null },
+            title = { Text("قص الصورة") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    if (sourceBitmap != null) {
+                        CropPreview(bitmap = sourceBitmap, frame = cropFrame, onFrameChange = { cropFrame = it })
+                        Text("اسحب المقابض الزرقاء لتحديد الجزء الذي تريد الاحتفاظ به.")
+                    } else {
+                        Text("جارٍ تجهيز الصورة أو تعذر تحميلها.")
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(enabled = sourceImage != null && sourceBitmap != null, onClick = {
+                    val original = sourceImage
+                    if (original != null) {
+                        scope.launch {
+                            val current = document
+                            val cropped = withContext(Dispatchers.IO) {
+                                repository.cropImage(original, cropFrame)
+                            }
+                            if (cropped != null) {
+                                applyDocument(current.copy(images = current.images.map {
+                                    if (it.id == original.id) cropped else it
+                                }))
+                                canvasSelection = CanvasSelection(imageIds = setOf(original.id))
+                            } else {
+                                Toast.makeText(context, "تعذر قص الصورة", Toast.LENGTH_SHORT).show()
+                            }
+                            cropDialogImageId = null
+                        }
+                    }
+                }) { Text("تطبيق القص") }
+            },
+            dismissButton = { TextButton(onClick = { cropDialogImageId = null }) { Text("إلغاء") } }
+        )
+    }
+
     if (pagesDialog) {
         AlertDialog(
             onDismissRequest = { pagesDialog = false },
