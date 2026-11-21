@@ -106,10 +106,15 @@ object CanvasColorEngine {
     fun hex(color: Int): String = "#%08X".format(java.util.Locale.ROOT, color)
 
     fun applyBackground(document: DrawingDocument, color: Int): DrawingDocument {
-        val active = document.activeArtboardId
-        return document.copy(artboards = document.artboards.map { board ->
-            if (active == null || board.id == active) board.copy(backgroundColor = color) else board
-        })
+        val activeBoard = document.activeArtboardId
+        val boards = document.artboards.map { board ->
+            if (activeBoard == null || board.id == activeBoard) board.copy(backgroundColor = color) else board
+        }
+        val activePage = document.activePageId
+        val pages = if (activePage == null) document.pages else document.pages.map { page ->
+            if (page.id == activePage) page.copy(backgroundColor = color) else page
+        }
+        return document.copy(artboards = boards, pages = pages)
     }
 }
 
