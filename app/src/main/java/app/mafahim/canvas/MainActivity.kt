@@ -112,6 +112,8 @@ private fun MafahimApp() {
     var colorDialog by remember { mutableStateOf(false) }
     var customColorHex by remember { mutableStateOf("#FF20242D") }
     var clipboard by remember { mutableStateOf(CanvasClipboard()) }
+    var cropDialogImageId by remember { mutableStateOf<String?>(null) }
+    var cropFrame by remember { mutableStateOf(ImageCropFrame()) }
     var documentList by remember { mutableStateOf(emptyList<DocumentSummary>()) }
     val scope = rememberCoroutineScope()
     var imageBitmaps by remember { mutableStateOf<Map<String, ImageBitmap>>(emptyMap()) }
@@ -637,6 +639,12 @@ private fun MafahimApp() {
                                     applyDocument(next)
                                     canvasSelection = selection
                                 }) { Text("لصق") }
+                            }
+                            if (canvasSelection.imageIds.size == 1) {
+                                TextButton(onClick = {
+                                    cropDialogImageId = canvasSelection.imageIds.first()
+                                    cropFrame = ImageCropFrame()
+                                }) { Text("قص الصورة") }
                             }
                             if (!canvasSelection.isEmpty) {
                                 TextButton(onClick = { clipboard = CanvasEditingEngine.copy(document, canvasSelection) }) { Text("نسخ") }
