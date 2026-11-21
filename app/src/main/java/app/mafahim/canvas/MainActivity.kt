@@ -367,6 +367,10 @@ private fun MafahimApp() {
                                                         BrushTool.PENCIL -> 0.72f
                                                         else -> 1f
                                                     }
+                                                    if (tool == BrushTool.MEASURE) {
+                                                        val distance = CanvasGeometry.distance(gesturePoints.first(), gesturePoints.last())
+                                                        Toast.makeText(context, "القياس: " + String.format("%.1f", distance), Toast.LENGTH_SHORT).show()
+                                                    }
                                                     addStrokeNow(
                                                         DrawStroke(
                                                             id = UUID.randomUUID().toString(),
@@ -375,7 +379,9 @@ private fun MafahimApp() {
                                                             color = color,
                                                             width = if (tool == BrushTool.ERASER) currentWidth * 3f else currentWidth,
                                                             opacity = opacity,
-                                                            points = CanvasGeometry.smooth(gesturePoints.toList())
+                                                            points = if (tool == BrushTool.LINE || tool == BrushTool.RECTANGLE || tool == BrushTool.ELLIPSE || tool == BrushTool.MEASURE) {
+                                                                CanvasGeometry.shapePoints(tool, gesturePoints.first(), gesturePoints.last())
+                                                            } else CanvasGeometry.smooth(gesturePoints.toList())
                                                         )
                                                     )
                                                 }
@@ -479,7 +485,11 @@ private fun MafahimApp() {
                                 BrushTool.PENCIL to "رصاص",
                                 BrushTool.MARKER to "ماركر",
                                 BrushTool.ERASER to "ممحاة",
-                                BrushTool.MOVE to "تحريك"
+                                BrushTool.MOVE to "تحريك",
+                                BrushTool.LINE to "خط",
+                                BrushTool.RECTANGLE to "مستطيل",
+                                BrushTool.ELLIPSE to "بيضاوي",
+                                BrushTool.MEASURE to "قياس"
                             ).forEach { (tool, label) ->
                                 FilterChip(
                                     selected = selectedTool == tool,
