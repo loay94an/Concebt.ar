@@ -35,8 +35,21 @@ object CanvasSelectionEngine {
         val points = buildList {
             document.strokes.filter { it.id in selection.strokeIds }.forEach { addAll(it.points) }
             document.images.filter { it.id in selection.imageIds }.forEach { image ->
-                add(CanvasPoint(image.x, image.y))
-                add(CanvasPoint(image.x + image.width, image.y + image.height))
+                val cx = image.x + image.width / 2f
+                val cy = image.y + image.height / 2f
+                val angle = Math.toRadians(image.rotationDegrees.toDouble())
+                val c = kotlin.math.cos(angle).toFloat()
+                val si = kotlin.math.sin(angle).toFloat()
+                listOf(
+                    CanvasPoint(image.x, image.y),
+                    CanvasPoint(image.x + image.width, image.y),
+                    CanvasPoint(image.x + image.width, image.y + image.height),
+                    CanvasPoint(image.x, image.y + image.height)
+                ).forEach { p ->
+                    val dx = p.x - cx
+                    val dy = p.y - cy
+                    add(CanvasPoint(cx + dx * c - dy * si, cy + dx * si + dy * c))
+                }
             }
         }
         if (points.isEmpty()) return null
@@ -49,9 +62,16 @@ object CanvasSelectionEngine {
     /** Select the nearest visible object under a world-space point. Images take priority. */
     fun hitTest(document: DrawingDocument, x: Float, y: Float, tolerance: Float): CanvasSelection {
         val visible = document.layers.filter { it.visible && !it.locked }.mapTo(hashSetOf()) { it.id }
-        val image = document.images.lastOrNull {
-            x >= it.x - tolerance && y >= it.y - tolerance &&
-                x <= it.x + it.width + tolerance && y <= it.y + it.height + tolerance
+        val image = document.images.lastOrNull { image ->
+            val cx = image.x + image.width / 2f
+            val cy = image.y + image.height / 2f
+            val angle = Math.toRadians(-image.rotationDegrees.toDouble())
+            val dx = x - cx
+            val dy = y - cy
+            val localX = cx + dx * kotlin.math.cos(angle).toFloat() - dy * kotlin.math.sin(angle).toFloat()
+            val localY = cy + dx * kotlin.math.sin(angle).toFloat() + dy * kotlin.math.cos(angle).toFloat()
+            localX >= image.x - tolerance && localY >= image.y - tolerance &&
+                localX <= image.x + image.width + tolerance && localY <= image.y + image.height + tolerance
         }
         if (image != null) return CanvasSelection(imageIds = setOf(image.id))
         val stroke = document.strokes.asReversed().firstOrNull { stroke ->
@@ -87,13 +107,15 @@ object CanvasSelectionEngine {
         val images = document.images.map { image ->
             if (image.id !in selection.imageIds) image
             else {
+                val center = map(CanvasPoint(image.x + image.width / 2f, image.y + image.height / 2f))
                 val topLeft = map(CanvasPoint(image.x, image.y))
                 val topRight = map(CanvasPoint(image.x + image.width, image.y))
                 val bottomLeft = map(CanvasPoint(image.x, image.y + image.height))
                 val newWidth = hypot(topRight.x - topLeft.x, topRight.y - topLeft.y).coerceAtLeast(1f)
                 val newHeight = hypot(bottomLeft.x - topLeft.x, bottomLeft.y - topLeft.y).coerceAtLeast(1f)
                 image.copy(
-                    x = topLeft.x, y = topLeft.y, width = newWidth, height = newHeight,
+                    x = center.x - newWidth / 2f, y = center.y - newHeight / 2f,
+                    width = newWidth, height = newHeight,
                     rotationDegrees = image.rotationDegrees + transform.rotationDegrees
                 )
             }
