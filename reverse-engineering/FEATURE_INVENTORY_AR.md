@@ -27,6 +27,12 @@
 | أدوات القياس والمسطرة | قياسات، وحدات، معايرة، زوايا، مساطر وأدلة | مؤشرات قياس؛ السلوك التفصيلي غير مثبت | [ ] |
 | التحديد والتحرير | تحديد عنصر/مساحة، إضافة/إزالة من التحديد، نقل، تدوير، تحجيم، نسخ/لصق، حذف | NativeCanvasPickerController ومؤشرات item picker | [ ] |
 | منتقي الألوان | التقاط لون من اللوحة، نطاق الطبقات، تجاهل ألفا، تضمين العناصر المقفلة | NativeCanvasPickerController APIs | [ ] |
+| أدلة الأشكال | أنواع Shape Guide، التدوير، التفعيل، حدود الدليل وسلوك الالتقاط | NativeCanvasShapeGuideController في نتائج JADX | [ ] |
+| الالتقاط والمحاذاة | Snap، محاذاة العناصر، خيارات الالتقاط والتسامح | NativeCanvasSnapController في نتائج JADX | [ ] |
+| القياس | الوحدة المحلية، التحويل بين الوحدات، القياس على اللوحة | NativeCanvasMeasurementController في نتائج JADX | [ ] |
+| القلم المتصل | اكتشاف القلم، إجراءات القلم المخصصة، توافق الأجهزة | NativeStylusManager في خريطة JNI/JADX | [?] |
+| التصدير المتقدم | مناطق التصدير، PPI، PDF raster، PSD | NativeCanvasExportController في خريطة JNI | [ ] |
+| استيراد/عرض PDF | فتح الصفحات وعرضها وإدارة مهام العرض | NativePDFHandle وNativePDFRenderTask | [?] |
 | الطبقات | إضافة، حذف، إعادة تسمية، ترتيب، إظهار/إخفاء، قفل، عتامة ودمج | CanvasLayerController ومزايا طبقات أساسية في المشروع | [~] |
 | التراجع والإعادة | سجل العمليات، حدود السجل، عمليات مركبة، حفظ نقاط مرجعية | CanvasUndoController؛ 40 خطوة في التنفيذ الحالي | [~] |
 | الصور والعناصر المستوردة | إدراج، تحديد، نقل، تحجيم، تدوير، قص، ترتيب، حذف | إدراج صور ونموذج ImageEditState؛ الربط بالواجهة مطلوب | [~] |
@@ -54,6 +60,11 @@
 - NativeCanvasToolController: الأدوات وخانات شريط الأدوات وخصائصها.
 - NativeCanvasDocumentController: إنشاء/تحميل/حفظ المستند.
 - NativeCanvasPickerController: منتقي اللون والعناصر.
+- NativeCanvasShapeGuideController: أدلة الأشكال.
+- NativeCanvasSnapController: الالتقاط والمحاذاة.
+- NativeCanvasMeasurementController: القياس والوحدات.
+- NativeStylusManager: اكتشاف القلم وإجراءاته.
+- NativeCanvasExportController: مناطق التصدير وPPI وPDF raster وPSD.
 - NativeCanvasBackgroundController: الخلفية.
 - NativeCanvasNudgeController: حالة قائمة/أوامر Nudge.
 - NativePDFRenderTask: مهمة إخراج PDF.
@@ -69,6 +80,7 @@
 
 ### المرحلة 1 — جرد مرئي قابل للمراجعة
 - [ ] توثيق كل Activity/Fragment/Dialog/BottomSheet من Manifest وJADX.
+- [ ] استكمال ربط ShapeGuide/Snap/Measurement/Export/PDF APIs بواجهات الاستخدام واختبارها.
 - [ ] ربط كل شاشة بأسماء الموارد والنصوص والأيقونات والتنقل.
 - [ ] التقاط لقطات شاشة مرجعية عند تشغيل APK الأصلي على جهاز/محاكي متوافق.
 - [ ] تحويل كل عنصر إلى حالة: مطابق / جزئي / مفقود / غير مؤكد.
