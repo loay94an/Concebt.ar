@@ -4,6 +4,7 @@ import android.content.Context
 import android.net.Uri
 import androidx.core.content.FileProvider
 import java.io.File
+import java.util.Base64
 import kotlin.math.ceil
 import kotlin.math.max
 
@@ -11,11 +12,15 @@ object SvgExporter {
     fun export(context: Context, document: DrawingDocument): Uri {
         val directory = File(context.cacheDir, "exports").apply { mkdirs() }
         val output = File(directory, "mafahim-${System.currentTimeMillis()}.svg")
-        output.writeText(buildSvg(document), Charsets.UTF_8)
+        val imageData = document.images.mapNotNull { image ->
+            val file = File(context.filesDir, "images/${File(image.fileName).name}")
+            if (file.isFile) image.fileName to "data:image/png;base64," + Base64.getEncoder().encodeToString(file.readBytes()) else null
+        }.toMap()
+        output.writeText(buildSvg(document, imageData), Charsets.UTF_8)
         return FileProvider.getUriForFile(context, "${context.packageName}.files", output)
     }
 
-    internal fun buildSvg(document: DrawingDocument): String {
+    internal fun buildSvg(document: DrawingDocument, imageData: Map<String, String> = emptyMap()): String {
         val visibleLayers = document.layers.filter { it.visible }.associateBy { it.id }
         val drawable = document.strokes.mapNotNull { stroke ->
             val layer = visibleLayers[stroke.layerId] ?: return@mapNotNull null
@@ -40,6 +45,10 @@ object SvgExporter {
         return buildString {
             appendLine("""<svg xmlns="http://www.w3.org/2000/svg" width="${ceil(viewWidth).toInt()}" height="${ceil(viewHeight).toInt()}" viewBox="${fmt(minX)} ${fmt(minY)} ${fmt(viewWidth)} ${fmt(viewHeight)}">""")
             appendLine("""<rect x="${fmt(minX)}" y="${fmt(minY)}" width="${fmt(viewWidth)}" height="${fmt(viewHeight)}" fill="#ffffff"/>""")
+            document.images.forEach { image ->
+                val data = imageData[image.fileName] ?: return@forEach
+                appendLine("""<image x="${fmt(image.x)}" y="${fmt(image.y)}" width="${fmt(image.width)}" height="${fmt(image.height)}" href="$data"/>""")
+            }
             drawable.forEach { (stroke, points, widthAndOpacity) ->
                 val (width, opacity) = widthAndOpacity
                 val hex = Integer.toHexString(stroke.color).takeLast(6).padStart(6, '0')
