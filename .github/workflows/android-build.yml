@@ -9,6 +9,13 @@ on:
       - '*.gradle.kts'
       - 'gradle.properties'
       - 'README.md'
+  pull_request:
+    paths:
+      - '.github/workflows/android-build.yml'
+      - 'app/**'
+      - '*.gradle.kts'
+      - 'gradle.properties'
+      - 'README.md'
   workflow_dispatch:
 
 permissions:
@@ -16,7 +23,7 @@ permissions:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -53,6 +60,7 @@ jobs:
           sha256sum "$APK"
 
       - name: Upload debug APK
+        if: github.event_name != 'pull_request'
         uses: actions/upload-artifact@v4
         with:
           name: concepts-arabic-debug-apk
