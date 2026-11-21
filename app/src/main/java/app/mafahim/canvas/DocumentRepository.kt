@@ -69,7 +69,8 @@ class DocumentRepository(context: Context) {
         return runCatching {
             DataInputStream(BufferedInputStream(FileInputStream(target))).use { input ->
                 require(input.readInt() == MAGIC) { "صيغة ملف غير معروفة" }
-                val formatVersion = input.readInt()\n                require(formatVersion in 1..FORMAT_VERSION) { "إصدار ملف غير مدعوم" }
+                val formatVersion = input.readInt()
+                require(formatVersion in 1..FORMAT_VERSION) { "إصدار ملف غير مدعوم" }
                 val title = input.readUTF()
                 val layerCount = input.readInt()
                 require(layerCount in 1..MAX_LAYERS) { "عدد الطبقات غير صالح" }
