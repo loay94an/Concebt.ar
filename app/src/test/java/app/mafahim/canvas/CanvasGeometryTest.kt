@@ -27,6 +27,19 @@ class CanvasGeometryTest {
     }
 
     @Test
+    fun shapeGuideCreatesRectangleAndEllipsePaths() {
+        val start = CanvasPoint(0f, 0f)
+        val end = CanvasPoint(20f, 10f)
+        val rectangle = CanvasGeometry.shapePoints(BrushTool.RECTANGLE, start, end)
+        val ellipse = CanvasGeometry.shapePoints(BrushTool.ELLIPSE, start, end)
+        assertEquals(5, rectangle.size)
+        assertEquals(start, rectangle.first())
+        assertEquals(start, rectangle.last())
+        assertEquals(65, ellipse.size)
+        assertEquals(ellipse.first(), ellipse.last())
+    }
+
+    @Test
     fun smoothKeepsEndpointsAndAddsIntermediateSamples() {
         val points = listOf(CanvasPoint(0f, 0f), CanvasPoint(10f, 10f), CanvasPoint(20f, 0f))
         val smoothed = CanvasGeometry.smooth(points, subdivisions = 4)
