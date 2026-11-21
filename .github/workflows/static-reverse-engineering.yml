@@ -1,0 +1,88 @@
+name: Static reverse engineering (private APK)
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '30 2 * * 0'
+permissions:
+  contents: write
+concurrency:
+  group: concepts-static-analysis
+  cancel-in-progress: false
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate private APK source configuration
+        env:
+          APK_SOURCE_REPO: ${{ vars.APK_SOURCE_REPO }}
+          APK_RELEASE_TAG: ${{ vars.APK_RELEASE_TAG }}
+          APK_ASSET_NAME: ${{ vars.APK_ASSET_NAME }}
+          APK_SOURCE_TOKEN: ${{ secrets.APK_SOURCE_TOKEN }}
+        run: |
+          set -euo pipefail
+          test -n "$APK_SOURCE_REPO" || { echo "::error::Missing APK_SOURCE_REPO"; exit 1; }
+          test -n "$APK_RELEASE_TAG" || { echo "::error::Missing APK_RELEASE_TAG"; exit 1; }
+          test -n "$APK_ASSET_NAME" || { echo "::error::Missing APK_ASSET_NAME"; exit 1; }
+          test -n "$APK_SOURCE_TOKEN" || { echo "::error::Missing APK_SOURCE_TOKEN"; exit 1; }
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Download private APK and verify SHA-256
+        env:
+          GH_TOKEN: ${{ secrets.APK_SOURCE_TOKEN }}
+          APK_SOURCE_REPO: ${{ vars.APK_SOURCE_REPO }}
+          APK_RELEASE_TAG: ${{ vars.APK_RELEASE_TAG }}
+          APK_ASSET_NAME: ${{ vars.APK_ASSET_NAME }}
+        run: |
+          set -euo pipefail
+          mkdir -p private-input
+          gh release download "$APK_RELEASE_TAG" --repo "$APK_SOURCE_REPO" --pattern "$APK_ASSET_NAME" --dir private-input
+          APK="private-input/$APK_ASSET_NAME"
+          test -s "$APK"
+          ACTUAL="$(sha256sum "$APK" | awk '{print $1}')"
+          EXPECTED="47e4e5244f2e2284349888a3fad00f407c1f0503429ec3d0e469f24924a98fdf"
+          test "$ACTUAL" = "$EXPECTED" || { echo "::error::APK SHA-256 mismatch"; exit 1; }
+          echo "$PWD/$APK" > /tmp/concepts-apk-path
+      - name: Install JADX from official latest release
+        run: |
+          set -euo pipefail
+          URL="$(curl -fsSL https://api.github.com/repos/skylot/jadx/releases/latest | python3 -c 'import json,sys; d=json.load(sys.stdin); a=[x["browser_download_url"] for x in d["assets"] if x["name"].startswith("jadx-") and x["name"].endswith(".zip")]; print(a[0] if a else "")')"
+          test -n "$URL"
+          curl -fL "$URL" -o /tmp/jadx.zip
+          mkdir -p /opt/jadx
+          unzip -q /tmp/jadx.zip -d /opt/jadx
+          J="$(find /opt/jadx -type f -name jadx | head -n1)"
+          test -n "$J"
+          chmod +x "$J"
+          echo "$(dirname "$J")" >> "$GITHUB_PATH"
+          "$J" --version
+      - name: Decompile and generate sanitized Arabic report
+        run: |
+          set -euo pipefail
+          APK="$(cat /tmp/concepts-apk-path)"
+          rm -rf /tmp/concepts-jadx
+          jadx --show-bad-code -d /tmp/concepts-jadx "$APK" 2>&1 | tee /tmp/jadx.log || true
+          python3 tools/reverse_engineering/report_jadx.py --apk "$APK" --decompiled /tmp/concepts-jadx --jadx-log /tmp/jadx.log --output reverse-engineering/JADX_AUTOMATED_REPORT_AR.md
+          test -s reverse-engineering/JADX_AUTOMATED_REPORT_AR.md
+      - name: Commit sanitized report
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add reverse-engineering/JADX_AUTOMATED_REPORT_AR.md
+          if ! git diff --cached --quiet; then
+            git commit -m "docs: refresh automated JADX evidence report"
+            git push
+          else
+            echo "Report unchanged."
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: concepts-sanitized-analysis-report
+          path: reverse-engineering/JADX_AUTOMATED_REPORT_AR.md
+          if-no-files-found: error
+          retention-days: 30
