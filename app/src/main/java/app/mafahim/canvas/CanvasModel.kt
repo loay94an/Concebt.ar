@@ -2,9 +2,11 @@ package app.mafahim.canvas
 
 import kotlin.math.hypot
 import kotlin.math.PI
+import kotlin.math.cos
+import kotlin.math.sin
 import java.util.UUID
 
-enum class BrushTool { PEN, PENCIL, MARKER, ERASER, MOVE }
+enum class BrushTool { PEN, PENCIL, MARKER, ERASER, MOVE, LINE, RECTANGLE, ELLIPSE, MEASURE }
 
 data class CanvasPoint(val x: Float, val y: Float, val pressure: Float = 1f, val tilt: Float = 0f, val orientation: Float = 0f)
 
@@ -71,6 +73,24 @@ object CanvasGeometry {
         val pressure = normalizedPressure(point.pressure)
         val tilt = normalizedTilt(point.tilt) / (PI / 2.0).toFloat()
         return baseWidth * pressure * (1f + tilt * 0.35f)
+    }
+
+    fun shapePoints(tool: BrushTool, start: CanvasPoint, end: CanvasPoint): List<CanvasPoint> {
+        return when (tool) {
+            BrushTool.LINE, BrushTool.MEASURE -> listOf(start, end)
+            BrushTool.RECTANGLE -> listOf(start, CanvasPoint(end.x, start.y), end, CanvasPoint(start.x, end.y), start)
+            BrushTool.ELLIPSE -> {
+                val centerX = (start.x + end.x) / 2f
+                val centerY = (start.y + end.y) / 2f
+                val radiusX = kotlin.math.abs(end.x - start.x) / 2f
+                val radiusY = kotlin.math.abs(end.y - start.y) / 2f
+                (0..64).map { step ->
+                    val angle = (step / 64f) * (2f * PI.toFloat())
+                    CanvasPoint(centerX + cos(angle) * radiusX, centerY + sin(angle) * radiusY)
+                }
+            }
+            else -> listOf(start, end)
+        }
     }
 
     fun smooth(points: List<CanvasPoint>, subdivisions: Int = 3): List<CanvasPoint> {
