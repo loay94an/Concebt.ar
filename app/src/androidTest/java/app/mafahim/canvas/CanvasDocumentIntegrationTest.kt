@@ -10,6 +10,19 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class CanvasDocumentIntegrationTest {
+    @Test fun layeredPsdExportCreatesPhotoshopFile() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val document = DrawingDocument.empty().copy(
+            strokes = listOf(DrawStroke("psd-stroke", "layer-base", BrushTool.PEN, -1, 4f, 1f,
+                listOf(CanvasPoint(10f, 10f), CanvasPoint(90f, 90f))))
+        )
+        val uri = PsdExporter.export(context, document)
+        val header = context.contentResolver.openInputStream(uri)!!.use { input ->
+            ByteArray(4).also { buffer -> input.read(buffer) }
+        }
+        assertEquals("8BPS", String(header, Charsets.US_ASCII))
+    }
+
     @Test fun saveRestorePreservesLayersImagesGuidesAndStylusSamples() {
         val context = ApplicationProvider.getApplicationContext<Context>()
         val repository = DocumentRepository(context)
