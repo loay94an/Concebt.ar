@@ -50,6 +50,8 @@ class DocumentRepository(context: Context) {
                     output.writeFloat(point.x.finiteOr(0f))
                     output.writeFloat(point.y.finiteOr(0f))
                     output.writeFloat(point.pressure.finiteOr(1f).coerceIn(0.05f, 1f))
+                    output.writeFloat(point.tilt.finiteOr(0f).coerceIn(0f, 1.5707964f))
+                    output.writeFloat(point.orientation.finiteOr(0f).coerceIn(-3.1415927f, 3.1415927f))
                 }
             }
             output.flush()
@@ -98,7 +100,12 @@ class DocumentRepository(context: Context) {
                         val x = input.readFloat()
                         val y = input.readFloat()
                         require(x.isFinite() && y.isFinite()) { "إحداثيات غير صالحة" }
-                        CanvasPoint(x, y, if (formatVersion >= 2) input.readFloat().finiteOr(1f).coerceIn(0.05f, 1f) else 1f)
+                        CanvasPoint(
+                            x, y,
+                            if (formatVersion >= 2) input.readFloat().finiteOr(1f).coerceIn(0.05f, 1f) else 1f,
+                            if (formatVersion >= 3) input.readFloat().finiteOr(0f).coerceIn(0f, 1.5707964f) else 0f,
+                            if (formatVersion >= 3) input.readFloat().finiteOr(0f).coerceIn(-3.1415927f, 3.1415927f) else 0f
+                        )
                     }
                     DrawStroke(id, layerId, tool, color, width, opacity, points)
                 }
@@ -111,7 +118,7 @@ class DocumentRepository(context: Context) {
 
     companion object {
         private const val MAGIC = 0x4D464D31
-        private const val FORMAT_VERSION = 2
+        private const val FORMAT_VERSION = 3
         private const val MAX_TEXT = 256
         private const val MAX_LAYERS = 128
         private const val MAX_STROKES = 100_000
