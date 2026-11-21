@@ -4,7 +4,7 @@ import java.io.ByteArrayOutputStream
 import java.io.DataOutputStream
 
 /** One full-canvas layer in row-major RGBA byte order. */
-data class PsdRasterLayer(val name: String, val visible: Boolean, val rgba: ByteArray)
+data class PsdRasterLayer(val name: String, val visible: Boolean, val rgba: ByteArray, val opacity: Float = 1f)
 
 object PsdWriter {
     fun write(width: Int, height: Int, layers: List<PsdRasterLayer>, compositeRgba: ByteArray): ByteArray {
@@ -26,19 +26,26 @@ object PsdWriter {
                 }
                 out.writeBytes("8BIM")
                 out.writeBytes("norm")
-                out.writeByte(255)
+                out.writeByte((layer.opacity.takeIf { it.isFinite() } ?: 1f).coerceIn(0f, 1f).times(255f).toInt())
                 out.writeByte(0)
                 out.writeByte(if (layer.visible) 0 else 2)
                 out.writeByte(0)
-                val name = layer.name.toByteArray(Charsets.UTF_8).take(255).toByteArray()
-                val paddedNameLength = ((name.size + 1 + 3) / 4) * 4
-                val extraLength = 4 + paddedNameLength
+                val pascalName = layer.name.map { if (it.code in 32..126) it.code.toByte() else '?'.code.toByte() }.take(255).toByteArray()
+                val paddedNameLength = ((pascalName.size + 1 + 3) / 4) * 4
+                val unicodeName = layer.name.toByteArray(Charsets.UTF_16BE)
+                val unicodeBlockLength = 12 + unicodeName.size
+                val extraLength = 8 + paddedNameLength + unicodeBlockLength
                 out.writeInt(extraLength)
                 out.writeInt(0) // layer mask data
                 out.writeInt(0) // blending ranges
-                out.writeByte(name.size)
-                out.write(name)
-                repeat(paddedNameLength - name.size - 1) { out.writeByte(0) }
+                out.writeByte(pascalName.size)
+                out.write(pascalName)
+                repeat(paddedNameLength - pascalName.size - 1) { out.writeByte(0) }
+                out.writeBytes("8BIM")
+                out.writeBytes("luni")
+                out.writeInt(4 + unicodeName.size)
+                out.writeInt(layer.name.length)
+                out.write(unicodeName)
             }
             layers.forEach { layer ->
                 for (channel in intArrayOf(0, 1, 2, 3)) {
