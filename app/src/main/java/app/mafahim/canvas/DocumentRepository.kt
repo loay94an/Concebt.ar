@@ -49,6 +49,7 @@ class DocumentRepository(context: Context) {
                 points.forEach { point ->
                     output.writeFloat(point.x.finiteOr(0f))
                     output.writeFloat(point.y.finiteOr(0f))
+                    output.writeFloat(point.pressure.finiteOr(1f).coerceIn(0.05f, 1f))
                 }
             }
             output.flush()
@@ -68,7 +69,7 @@ class DocumentRepository(context: Context) {
         return runCatching {
             DataInputStream(BufferedInputStream(FileInputStream(target))).use { input ->
                 require(input.readInt() == MAGIC) { "صيغة ملف غير معروفة" }
-                require(input.readInt() == FORMAT_VERSION) { "إصدار ملف غير مدعوم" }
+                val formatVersion = input.readInt()\n                require(formatVersion in 1..FORMAT_VERSION) { "إصدار ملف غير مدعوم" }
                 val title = input.readUTF()
                 val layerCount = input.readInt()
                 require(layerCount in 1..MAX_LAYERS) { "عدد الطبقات غير صالح" }
@@ -96,7 +97,7 @@ class DocumentRepository(context: Context) {
                         val x = input.readFloat()
                         val y = input.readFloat()
                         require(x.isFinite() && y.isFinite()) { "إحداثيات غير صالحة" }
-                        CanvasPoint(x, y)
+                        CanvasPoint(x, y, if (formatVersion >= 2) input.readFloat().finiteOr(1f).coerceIn(0.05f, 1f) else 1f)
                     }
                     DrawStroke(id, layerId, tool, color, width, opacity, points)
                 }
@@ -109,7 +110,7 @@ class DocumentRepository(context: Context) {
 
     companion object {
         private const val MAGIC = 0x4D464D31
-        private const val FORMAT_VERSION = 1
+        private const val FORMAT_VERSION = 2
         private const val MAX_TEXT = 256
         private const val MAX_LAYERS = 128
         private const val MAX_STROKES = 100_000
