@@ -104,6 +104,8 @@ private fun MafahimApp() {
     var zoom by remember { mutableStateOf(1f) }
     var pan by remember { mutableStateOf(Offset.Zero) }
     var layersDialog by remember { mutableStateOf(false) }
+    var renameLayerId by remember { mutableStateOf<String?>(null) }
+    var renameLayerName by remember { mutableStateOf("") }
     var galleryDialog by remember { mutableStateOf(false) }
     var documentList by remember { mutableStateOf(emptyList<DocumentSummary>()) }
     val scope = rememberCoroutineScope()
@@ -165,7 +167,7 @@ private fun MafahimApp() {
 
     fun addStroke(stroke: DrawStroke) {
         val targetLayer = document.layers.firstOrNull { it.id == stroke.layerId } ?: return
-        if (!targetLayer.visible) return
+        if (!targetLayer.visible || targetLayer.locked) return
         applyDocument(document.copy(strokes = document.strokes + stroke))
     }
 
@@ -672,7 +674,33 @@ private fun MafahimApp() {
                                 onClick = { activeLayerId = layer.id },
                                 enabled = layer.visible
                             )
-                            Text(layer.name, modifier = Modifier.weight(1f), fontSize = 13.sp)
+                            Text(layer.name, modifier = Modifier.weight(1f), fontSize = 13.sp, maxLines = 1)
+                            Checkbox(
+                                checked = layer.locked,
+                                onCheckedChange = { locked ->
+                                    applyDocument(document.copy(layers = document.layers.map { if (it.id == layer.id) it.copy(locked = locked) else it }))
+                                }
+                            )
+                            TextButton(onClick = { renameLayerId = layer.id; renameLayerName = layer.name }) { Text("اسم") }
+                            val layerIndex = document.layers.indexOfFirst { it.id == layer.id }
+                            TextButton(onClick = {
+                                if (layerIndex > 0) {
+                                    val reordered = document.layers.toMutableList()
+                                    val item = reordered.removeAt(layerIndex)
+                                    reordered.add(layerIndex - 1, item)
+                                    applyDocument(document.copy(layers = reordered))
+                                }
+                            }, enabled = layerIndex > 0) { Text("↑") }
+                            TextButton(onClick = {
+                                if (layerIndex in 0 until document.layers.lastIndex) {
+                                    val reordered = document.layers.toMutableList()
+                                    val item = reordered.removeAt(layerIndex)
+                                    reordered.add(layerIndex + 1, item)
+                                    applyDocument(document.copy(layers = reordered))
+                                }
+                            }, enabled = layerIndex in 0 until document.layers.lastIndex) { Text("↓") }
+                            TextButton(onClick = { applyDocument(document.copy(layers = document.layers.map { if (it.id == layer.id) it.copy(opacity = (it.opacity - 0.1f).coerceAtLeast(0f)) else it })) }) { Text("−") }
+                            TextButton(onClick = { applyDocument(document.copy(layers = document.layers.map { if (it.id == layer.id) it.copy(opacity = (it.opacity + 0.1f).coerceAtMost(1f)) else it })) }) { Text("+") }
                             Checkbox(
                                 checked = layer.visible,
                                 onCheckedChange = { visible ->
@@ -719,6 +747,31 @@ private fun MafahimApp() {
                 }) { Text("إضافة طبقة") }
             },
             dismissButton = { TextButton(onClick = { layersDialog = false }) { Text("إغلاق") } }
+        )
+    }
+
+    if (renameLayerId != null) {
+        AlertDialog(
+            onDismissRequest = { renameLayerId = null },
+            title = { Text("إعادة تسمية الطبقة") },
+            text = {
+                androidx.compose.material3.OutlinedTextField(
+                    value = renameLayerName,
+                    onValueChange = { renameLayerName = it.take(80) },
+                    singleLine = true,
+                    label = { Text("اسم الطبقة") }
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    val id = renameLayerId
+                    if (id != null && renameLayerName.isNotBlank()) {
+                        applyDocument(document.copy(layers = document.layers.map { if (it.id == id) it.copy(name = renameLayerName.trim()) else it }))
+                    }
+                    renameLayerId = null
+                }) { Text("حفظ") }
+            },
+            dismissButton = { TextButton(onClick = { renameLayerId = null }) { Text("إلغاء") } }
         )
     }
 
