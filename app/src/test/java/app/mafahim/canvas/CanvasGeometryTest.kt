@@ -1,6 +1,7 @@
 package app.mafahim.canvas
 
 import org.junit.Assert.assertEquals
+import kotlin.math.PI
 import org.junit.Test
 
 class CanvasGeometryTest {
