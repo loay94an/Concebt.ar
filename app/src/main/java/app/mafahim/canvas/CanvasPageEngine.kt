@@ -51,6 +51,8 @@ object CanvasPageEngine {
     }
     private fun snapshot(document: DrawingDocument, id: String, name: String) = DrawingPage(
         id, name,
-        document.artboards.firstOrNull { it.id == document.activeArtboardId }?.backgroundColor ?: 0xFFFFFFFF.toInt(),
+        document.pages.firstOrNull { it.id == id }?.backgroundColor
+            ?: document.artboards.firstOrNull { it.id == document.activeArtboardId }?.backgroundColor
+            ?: 0xFFFFFFFF.toInt(),
         document.layers.toList(), document.strokes.toList(), document.images.toList(), document.guides.toList())
 }
