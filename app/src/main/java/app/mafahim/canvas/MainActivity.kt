@@ -3,6 +3,7 @@ package app.mafahim.canvas
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Toast
+import android.view.MotionEvent
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Canvas
@@ -58,7 +59,7 @@ import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.foundation.gestures.awaitFirstDown
-import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.pointer.pointerInteropFilter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.font.FontWeight
@@ -131,6 +132,17 @@ private fun MafahimApp() {
     val currentLayer by rememberUpdatedState(activeLayerId)
     val addStrokeNow by rememberUpdatedState<(DrawStroke) -> Unit>({ stroke -> addStroke(stroke) })
     val setPanNow by rememberUpdatedState<(Offset) -> Unit>({ value -> pan = value })
+    val setViewNow by rememberUpdatedState<(Float, Offset) -> Unit>({ nextZoom, nextPan ->
+        zoom = nextZoom
+        pan = nextPan
+    })
+    val currentTool by rememberUpdatedState(selectedTool)
+    val gesturePoints = remember { mutableListOf<CanvasPoint>() }
+    var activeTool by remember { mutableStateOf(BrushTool.PEN) }
+    var drawingGesture by remember { mutableStateOf(false) }
+    var panningGesture by remember { mutableStateOf(false) }
+    var previousCentroid by remember { mutableStateOf(Offset.Zero) }
+    var previousSpan by remember { mutableStateOf(0f) }
 
     val palette = listOf(
         0xFF20242D.toInt(), 0xFF265D97.toInt(), 0xFFCC4B4B.toInt(),
