@@ -70,5 +70,6 @@ class CanvasInteractionTest {
         val b = CanvasPoint(100f, 0f)
         assertEquals(50f, CanvasMeasurement.distance(a, b, MeasurementUnit.MILLIMETER, 2f), 0.001f)
         assertEquals("5.00 cm", CanvasMeasurement.label(a, b, MeasurementUnit.CENTIMETER, 2f))
+        assertEquals(100f, CanvasMeasurement.distance(a, b, MeasurementUnit.PIXEL, 2f), 0.001f)
     }
 }
