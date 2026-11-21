@@ -19,5 +19,8 @@ class MainActivitySmokeTest {
         composeRule.onNodeWithText("استوديو الرسم").assertExists()
         composeRule.onNodeWithText("قلم").assertExists()
         composeRule.onNodeWithText("ممحاة").assertExists()
+        composeRule.onNodeWithText("تحديد").assertExists()
+        composeRule.onNodeWithText("دليل").assertExists()
+        composeRule.onNodeWithText("PSD").assertExists()
     }
 }
