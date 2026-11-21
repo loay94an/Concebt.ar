@@ -114,6 +114,19 @@ class DocumentRepository(context: Context) {
                 output.writeFloat(guide.spacing.finiteOr(24f).coerceIn(1f, 10000f))
                 output.writeBoolean(guide.enabled)
             }
+            val artboards = document.artboards.take(MAX_ARTBOARDS)
+            output.writeInt(artboards.size)
+            artboards.forEach { artboard ->
+                output.writeUTF(artboard.id.take(MAX_TEXT))
+                output.writeUTF(artboard.name.take(MAX_TEXT))
+                output.writeFloat(artboard.x.finiteOr(0f))
+                output.writeFloat(artboard.y.finiteOr(0f))
+                output.writeFloat(artboard.width.finiteOr(1000f).coerceIn(1f, 100000f))
+                output.writeFloat(artboard.height.finiteOr(1400f).coerceIn(1f, 100000f))
+                output.writeInt(artboard.backgroundColor)
+                output.writeBoolean(artboard.visible)
+            }
+            output.writeUTF(document.activeArtboardId.orEmpty().take(MAX_TEXT))
             output.flush()
         }
 
@@ -220,7 +233,23 @@ class DocumentRepository(context: Context) {
                         ShapeGuide(id, type, CanvasPoint(x, y), angle, spacing, enabled)
                     }
                 } else emptyList()
-                DrawingDocument(title, layers, strokes, documentId, images, guides)
+                val artboards = if (formatVersion >= 9) {
+                    val count = input.readInt()
+                    require(count in 0..MAX_ARTBOARDS) { "عدد اللوحات الفنية غير صالح" }
+                    List(count) {
+                        val id = input.readUTF()
+                        val name = input.readUTF()
+                        val x = input.readFloat().finiteOr(0f)
+                        val y = input.readFloat().finiteOr(0f)
+                        val width = input.readFloat().finiteOr(1000f).coerceIn(1f, 100000f)
+                        val height = input.readFloat().finiteOr(1400f).coerceIn(1f, 100000f)
+                        val backgroundColor = input.readInt()
+                        val visible = input.readBoolean()
+                        DrawingArtboard(id, name, x, y, width, height, backgroundColor, visible)
+                    }
+                } else emptyList()
+                val activeArtboardId = if (formatVersion >= 9) input.readUTF().ifBlank { null } else null
+                DrawingDocument(title, layers, strokes, documentId, images, guides, artboards, activeArtboardId)
             }
         }.getOrNull()
     }
@@ -229,12 +258,13 @@ class DocumentRepository(context: Context) {
 
     companion object {
         private const val MAGIC = 0x4D464D31
-        private const val FORMAT_VERSION = 8
+        private const val FORMAT_VERSION = 9
         private const val MAX_TEXT = 256
         private const val MAX_LAYERS = 128
         private const val MAX_STROKES = 100_000
         private const val MAX_POINTS = 50_000
         private const val MAX_IMAGES = 256
         private const val MAX_GUIDES = 256
+        private const val MAX_ARTBOARDS = 64
     }
 }
