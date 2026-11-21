@@ -7,6 +7,11 @@ on:
       - '.github/workflows/android-emulator-test.yml'
       - 'app/**'
       - '*.gradle.kts'
+  pull_request:
+    paths:
+      - '.github/workflows/android-emulator-test.yml'
+      - 'app/**'
+      - '*.gradle.kts'
   workflow_dispatch:
 
 permissions:
@@ -14,8 +19,10 @@ permissions:
 
 jobs:
   emulator:
-    runs-on: ubuntu-latest
-    timeout-minutes: 45
+    # Pin the known-stable hosted image; ubuntu-latest can move to a new
+    # runner image with emulator/KVM regressions independently of app code.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 50
     steps:
       - uses: actions/checkout@v4
 
@@ -31,7 +38,8 @@ jobs:
       - uses: android-actions/setup-android@v4
 
       - name: Install Android SDK
-        run: yes | sdkmanager 'platforms;android-35' 'build-tools;35.0.0' 'emulator' 'platform-tools' 'system-images;android-35;google_apis;x86_64'
+        run: |
+          yes | sdkmanager 'platforms;android-35' 'build-tools;35.0.0' 'emulator' 'platform-tools' 'system-images;android-35;google_apis;x86_64'
 
       - name: Run UI smoke test on Android emulator
         uses: reactivecircus/android-emulator-runner@v2
@@ -40,14 +48,17 @@ jobs:
           target: google_apis
           arch: x86_64
           profile: pixel_2
+          emulator-boot-timeout: 900
           disable-animations: true
-          script: gradle connectedDebugAndroidTest
+          script: gradle connectedDebugAndroidTest --stacktrace
 
       - name: Upload instrumentation reports
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: android-emulator-test-reports
-          path: app/build/reports/androidTests/
+          path: |
+            app/build/reports/androidTests/
+            app/build/outputs/androidTest-results/
           if-no-files-found: warn
           retention-days: 14
