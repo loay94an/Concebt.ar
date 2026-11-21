@@ -4,7 +4,7 @@ import kotlin.math.hypot
 
 enum class BrushTool { PEN, PENCIL, MARKER, ERASER, MOVE }
 
-data class CanvasPoint(val x: Float, val y: Float)
+data class CanvasPoint(val x: Float, val y: Float, val pressure: Float = 1f)
 
 data class DrawingLayer(
     val id: String,
@@ -43,5 +43,5 @@ object CanvasGeometry {
         return CanvasPoint((screen.x - panX) / safeZoom, (screen.y - panY) / safeZoom)
     }
 
-    fun distance(a: CanvasPoint, b: CanvasPoint): Float = hypot(a.x - b.x, a.y - b.y)
+    fun distance(a: CanvasPoint, b: CanvasPoint): Float = hypot(a.x - b.x, a.y - b.y)\n\n    fun normalizedPressure(value: Float): Float =\n        (if (value.isFinite()) value else 1f).coerceIn(0.05f, 1f)
 }
