@@ -97,8 +97,6 @@ jobs:
 
       - name: Run REA package, class, method and reference analysis
         working-directory: rea-source
-        env:
-          REA_JADX_MCP_JAR: ${{ env.REA_JADX_MCP_JAR }}
         run: |
           set -euo pipefail
           mkdir -p "$RUNNER_TEMP/rea-evidence"
@@ -126,9 +124,9 @@ jobs:
             echo
             echo "- تاريخ التشغيل: $(date -u '+%Y-%m-%d %H:%M UTC')"
             echo "- نتيجة المهمة: $JOB_STATUS"
-            echo "- بصمة APK المعتمدة: `47e4e5244f2e2284349888a3fad00f407c1f0503429ec3d0e469f24924a98fdf`"
-            echo "- الحزمة المتوقعة: `com.tophatch.concepts`"
-            echo "- الإصدار المتوقع: `2022.04.10` (versionCode `220600201`)"
+            printf '%s\n' '- بصمة APK المعتمدة: `47e4e5244f2e2284349888a3fad00f407c1f0503429ec3d0e469f24924a98fdf`'
+            printf '%s\n' '- الحزمة المتوقعة: `com.tophatch.concepts`'
+            printf '%s\n' '- الإصدار المتوقع: `2022.04.10` (versionCode `220600201`)'
             echo
             echo '## نطاق الفحص'
             echo '- REA Android package inspection'
