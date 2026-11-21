@@ -31,4 +31,53 @@ class PsdWriterTest {
             fail("Expected invalid raster rejection")
         } catch (_: IllegalArgumentException) { }
     }
+    @Test fun layerAndCompositeSectionsHaveConsistentRawChannelLengths() {
+        val width = 2
+        val height = 1
+        val pixels = width * height
+        val rgba = ByteArray(pixels * 4) { (it * 17).toByte() }
+        val bytes = PsdWriter.write(width, height, listOf(
+            PsdRasterLayer("حبر", true, rgba),
+            PsdRasterLayer("خلفية", false, rgba)
+        ), rgba)
+        val input = ByteBuffer.wrap(bytes).order(ByteOrder.BIG_ENDIAN)
+        input.position(26)
+        val colorModeLength = input.int
+        input.position(input.position() + colorModeLength)
+        val resourcesLength = input.int
+        input.position(input.position() + resourcesLength)
+        val layerMaskLength = input.int
+        val layerMaskStart = input.position()
+        val layerInfoLength = input.int
+        val layerInfoStart = input.position()
+        val layerInfoEnd = layerInfoStart + layerInfoLength
+        val layerCount = input.short.toInt()
+        assertEquals(2, layerCount)
+        repeat(layerCount) {
+            input.position(input.position() + 16)
+            val channelCount = input.short.toInt()
+            assertEquals(4, channelCount)
+            repeat(channelCount) {
+                val channelId = input.short.toInt()
+                assertTrue(channelId in listOf(0, 1, 2, -1))
+                assertEquals(2 + pixels, input.int)
+            }
+            input.position(input.position() + 8) // blend signature and mode
+            input.position(input.position() + 4) // opacity, clipping, flags, filler
+            val extraLength = input.int
+            assertTrue(extraLength >= 0)
+            input.position(input.position() + extraLength)
+        }
+        repeat(layerCount * 4) {
+            assertEquals(0, input.short.toInt()) // raw compression
+            input.position(input.position() + pixels)
+        }
+        assertEquals(layerInfoEnd, input.position())
+        input.position(layerInfoEnd)
+        assertEquals(0, input.int) // global layer mask length
+        assertEquals(layerMaskStart + layerMaskLength, input.position())
+        assertEquals(0, input.short.toInt()) // composite raw compression
+        assertEquals(3 * pixels, input.remaining())
+    }
+
 }
