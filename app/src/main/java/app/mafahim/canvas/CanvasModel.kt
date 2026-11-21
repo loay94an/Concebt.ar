@@ -6,7 +6,7 @@ import kotlin.math.cos
 import kotlin.math.sin
 import java.util.UUID
 
-enum class BrushTool { PEN, PENCIL, MARKER, ERASER, MOVE, LINE, RECTANGLE, ELLIPSE, MEASURE }
+enum class BrushTool { PEN, PENCIL, MARKER, ERASER, MOVE, LINE, RECTANGLE, ELLIPSE, MEASURE, SELECT, GUIDE, ROUND_BRUSH, CHISEL }
 
 data class CanvasPoint(val x: Float, val y: Float, val pressure: Float = 1f, val tilt: Float = 0f, val orientation: Float = 0f)
 
@@ -14,7 +14,8 @@ data class DrawingLayer(
     val id: String,
     val name: String,
     val visible: Boolean = true,
-    val opacity: Float = 1f
+    val opacity: Float = 1f,
+    val locked: Boolean = false
 )
 
 data class DrawStroke(
@@ -33,7 +34,29 @@ data class DrawingImage(
     val x: Float,
     val y: Float,
     val width: Float,
-    val height: Float
+    val height: Float,
+    val rotationDegrees: Float = 0f
+)
+
+data class DrawingArtboard(
+    val id: String,
+    val name: String,
+    val x: Float,
+    val y: Float,
+    val width: Float,
+    val height: Float,
+    val backgroundColor: Int = 0xFFFFFFFF.toInt(),
+    val visible: Boolean = true
+)
+
+data class DrawingPage(
+    val id: String,
+    val name: String,
+    val backgroundColor: Int = 0xFFFFFFFF.toInt(),
+    val layers: List<DrawingLayer>,
+    val strokes: List<DrawStroke>,
+    val images: List<DrawingImage> = emptyList(),
+    val guides: List<ShapeGuide> = emptyList()
 )
 
 data class DrawingDocument(
@@ -41,7 +64,12 @@ data class DrawingDocument(
     val layers: List<DrawingLayer>,
     val strokes: List<DrawStroke>,
     val id: String = UUID.randomUUID().toString(),
-    val images: List<DrawingImage> = emptyList()
+    val images: List<DrawingImage> = emptyList(),
+    val guides: List<ShapeGuide> = emptyList(),
+    val artboards: List<DrawingArtboard> = emptyList(),
+    val activeArtboardId: String? = null,
+    val pages: List<DrawingPage> = emptyList(),
+    val activePageId: String? = null
 ) {
     companion object {
         fun empty() = DrawingDocument(

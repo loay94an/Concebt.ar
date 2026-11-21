@@ -20,6 +20,16 @@ class IndependentBrushEngineTest {
         assertTrue(dabs.size > 10)
         assertEquals(100f, dabs.last().center.x, 0.001f)
     }
+    @Test fun largeStylusStrokeResamplesWithoutDroppingEndpoint() {
+        val points = (0..10_000).map { index ->
+            CanvasPoint(index.toFloat(), (index % 7).toFloat(), pressure = 0.2f + (index % 8) * 0.1f)
+        }
+        val dabs = IndependentBrushEngine.createDabs(points, BrushPreset.ROUND_BRUSH, 5f)
+        assertTrue(dabs.size > 10_000)
+        assertEquals(points.last().x, dabs.last().center.x, 0.001f)
+        assertTrue(dabs.all { it.radiusX.isFinite() && it.radiusY.isFinite() && it.opacity.isFinite() })
+    }
+
     @Test fun emptyAndInvalidInputAreSafe() {
         assertTrue(IndependentBrushEngine.createDabs(emptyList(), BrushPreset.PENCIL, Float.NaN).isEmpty())
         val dab = IndependentBrushEngine.createDabs(listOf(CanvasPoint(0f, 0f, pressure = Float.NaN, tilt = Float.NaN, orientation = Float.NaN)), BrushPreset.PENCIL, Float.NaN).single()

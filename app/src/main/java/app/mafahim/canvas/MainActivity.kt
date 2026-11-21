@@ -8,6 +8,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -63,6 +64,8 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.rotate
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.ui.input.pointer.pointerInteropFilter
@@ -102,19 +105,32 @@ private fun MafahimApp() {
     var zoom by remember { mutableStateOf(1f) }
     var pan by remember { mutableStateOf(Offset.Zero) }
     var layersDialog by remember { mutableStateOf(false) }
+    var renameLayerId by remember { mutableStateOf<String?>(null) }
+    var renameLayerName by remember { mutableStateOf("") }
     var galleryDialog by remember { mutableStateOf(false) }
+    var artboardsDialog by remember { mutableStateOf(false) }
+    var pagesDialog by remember { mutableStateOf(false) }
+    var colorDialog by remember { mutableStateOf(false) }
+    var brushLibraryDialog by remember { mutableStateOf(false) }
+    var customColorHex by remember { mutableStateOf("#FF20242D") }
+    var clipboard by remember { mutableStateOf(CanvasClipboard()) }
+    var cropDialogImageId by remember { mutableStateOf<String?>(null) }
+    var cropFrame by remember { mutableStateOf(ImageCropFrame()) }
     var documentList by remember { mutableStateOf(emptyList<DocumentSummary>()) }
     val scope = rememberCoroutineScope()
     var imageBitmaps by remember { mutableStateOf<Map<String, ImageBitmap>>(emptyMap()) }
     val undoStack = remember { mutableStateListOf<DrawingDocument>() }
     val redoStack = remember { mutableStateListOf<DrawingDocument>() }
+    var canvasSelection by remember { mutableStateOf(CanvasSelection()) }
+    var snapEnabled by remember { mutableStateOf(false) }
+    var guideAngleDegrees by remember { mutableStateOf(0f) }
+    var measurementUnit by remember { mutableStateOf(MeasurementUnit.MILLIMETER) }
 
     LaunchedEffect(Unit) {
         val saved = withContext(Dispatchers.IO) { repository.load() }
-        if (saved != null) {
-            document = saved
-            activeLayerId = saved.layers.firstOrNull()?.id ?: "layer-base"
-        }
+        val initial = CanvasPageEngine.normalized(saved ?: DrawingDocument.empty())
+        document = initial
+        activeLayerId = initial.layers.firstOrNull()?.id ?: "layer-base"
         documentList = withContext(Dispatchers.IO) { repository.listDocuments() }
         loaded = true
     }
@@ -148,6 +164,20 @@ private fun MafahimApp() {
         }
     }
 
+    val pdfPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) {
+            scope.launch {
+                runCatching {
+                    val imported = withContext(Dispatchers.IO) { repository.importPdf(uri) }
+                    if (imported.isNotEmpty()) applyDocument(document.copy(images = document.images + imported))
+                    Toast.makeText(context, "تم استيراد ${imported.size} صفحة من PDF", Toast.LENGTH_LONG).show()
+                }.onFailure {
+                    Toast.makeText(context, it.message ?: "تعذر استيراد PDF", Toast.LENGTH_LONG).show()
+                }
+            }
+        }
+    }
+
     LaunchedEffect(document.images) {
         imageBitmaps = withContext(Dispatchers.IO) {
             document.images.mapNotNull { image ->
@@ -156,9 +186,21 @@ private fun MafahimApp() {
         }
     }
 
+    val snapCandidates = remember(document) {
+        val visibleIds = document.layers.filter { it.visible && !it.locked }.mapTo(hashSetOf()) { it.id }
+        document.strokes.filter { it.layerId in visibleIds }.flatMap { stroke ->
+            listOfNotNull(stroke.points.firstOrNull(), stroke.points.lastOrNull())
+        } + document.images.flatMap { image ->
+            listOf(CanvasPoint(image.x, image.y), CanvasPoint(image.x + image.width, image.y + image.height))
+        }
+    }
+
+    fun snapped(point: CanvasPoint): CanvasPoint = if (!snapEnabled) point else
+        CanvasSnapEngine.snap(point, document.guides, 34f, snapCandidates, 8f / zoom.coerceAtLeast(0.2f)).point
+
     fun addStroke(stroke: DrawStroke) {
         val targetLayer = document.layers.firstOrNull { it.id == stroke.layerId } ?: return
-        if (!targetLayer.visible) return
+        if (!targetLayer.visible || targetLayer.locked) return
         applyDocument(document.copy(strokes = document.strokes + stroke))
     }
 
@@ -182,9 +224,9 @@ private fun MafahimApp() {
     var previousSpan by remember { mutableStateOf(0f) }
 
     val palette = listOf(
-        0xFF20242D.toInt(), 0xFF265D97.toInt(), 0xFFCC4B4B.toInt(),
-        0xFF2D8A66.toInt(), 0xFFE1A33A.toInt(), 0xFF7C59A6.toInt(),
-        0xFF111111.toInt(), 0xFF777777.toInt()
+        0xFF20242D.toInt(), 0xFF8B5CF6.toInt(), 0xFFEC4899.toInt(), 0xFF06B6D4.toInt(),
+        0xFF10B981.toInt(), 0xFFF59E0B.toInt(), 0xFFEF4444.toInt(), 0xFF3B82F6.toInt(),
+        0xFF111111.toInt(), 0xFF777777.toInt(), 0xFFB8A7D9.toInt(), 0xFFFFFFFF.toInt()
     )
 
     // Cache deterministic brush geometry per document revision; the Canvas draw pass
@@ -195,6 +237,8 @@ private fun MafahimApp() {
                 BrushTool.PENCIL -> BrushPreset.PENCIL
                 BrushTool.MARKER -> BrushPreset.MARKER
                 BrushTool.ERASER -> BrushPreset.ERASER
+                BrushTool.ROUND_BRUSH -> BrushPreset.ROUND_BRUSH
+                BrushTool.CHISEL -> BrushPreset.CHISEL
                 else -> BrushPreset.FINELINER
             }
             stroke.id to IndependentBrushEngine.createDabs(
@@ -205,15 +249,19 @@ private fun MafahimApp() {
 
     val colorScheme = if (darkMode) {
         darkColorScheme(
-            primary = Color(0xFF9AB8F0),
-            surface = Color(0xFF171A20),
-            background = Color(0xFF101318)
+            primary = Color(0xFFC4B5FD),
+            secondary = Color(0xFF67E8F9),
+            tertiary = Color(0xFFF9A8D4),
+            surface = Color(0xFF191722),
+            background = Color(0xFF101018)
         )
     } else {
         lightColorScheme(
-            primary = Color(0xFF315C87),
+            primary = Color(0xFF8B5CF6),
+            secondary = Color(0xFF06B6D4),
+            tertiary = Color(0xFFEC4899),
             surface = Color.White,
-            background = Color(0xFFF3F5F8)
+            background = Color(0xFFF4F2F8)
         )
     }
 
@@ -224,76 +272,84 @@ private fun MafahimApp() {
                     modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp, vertical = 10.dp),
                     verticalArrangement = Arrangement.spacedBy(9.dp)
                 ) {
-                    Row(
+                    Surface(
                         modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
+                        shape = RoundedCornerShape(22.dp),
+                        color = MaterialTheme.colorScheme.surface,
+                        shadowElevation = 2.dp
                     ) {
-                        Column {
-                            Text("مفاهيم", fontSize = 22.sp, fontWeight = FontWeight.Bold)
-                            Text("استوديو الرسم", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
-                        Row(verticalAlignment = Alignment.CenterVertically) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            Image(
+                                painter = androidx.compose.ui.res.painterResource(app.mafahim.canvas.R.drawable.ic_launcher_foreground),
+                                contentDescription = "شعار مفاهيم",
+                                modifier = Modifier.size(42.dp).clip(RoundedCornerShape(13.dp)).background(Color(0xFF8B5CF6))
+                            )
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text("مفاهيم", fontSize = 19.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                                Text("استوديو الرسم الإبداعي", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                            Surface(shape = RoundedCornerShape(12.dp), color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f)) {
+                                Text("لوحة العمل", modifier = Modifier.padding(horizontal = 11.dp, vertical = 8.dp), fontSize = 11.sp, fontWeight = FontWeight.Medium)
+                            }
                             TextButton(onClick = {
-                                if (undoStack.isNotEmpty()) {
-                                    redoStack.add(document)
-                                    document = undoStack.removeAt(undoStack.lastIndex)
-                                }
+                                if (undoStack.isNotEmpty()) { redoStack.add(document); document = undoStack.removeAt(undoStack.lastIndex) }
                             }, enabled = undoStack.isNotEmpty()) { Text("↶", fontSize = 22.sp) }
                             TextButton(onClick = {
-                                if (redoStack.isNotEmpty()) {
-                                    undoStack.add(document)
-                                    document = redoStack.removeAt(redoStack.lastIndex)
-                                }
+                                if (redoStack.isNotEmpty()) { undoStack.add(document); document = redoStack.removeAt(redoStack.lastIndex) }
                             }, enabled = redoStack.isNotEmpty()) { Text("↷", fontSize = 22.sp) }
-                            TextButton(onClick = { darkMode = !darkMode }) { Text(if (darkMode) "☀" else "☾") }
-                            TextButton(onClick = { documentList = repository.listDocuments(); galleryDialog = true }) { Text("المستندات") }
-                            TextButton(onClick = { imagePicker.launch(arrayOf("image/*")) }) { Text("صورة") }
-                            TextButton(onClick = {
-                                runCatching {
-                                    val uri = SvgExporter.export(context, document)
-                                    val shareIntent = Intent(Intent.ACTION_SEND).apply {
-                                        type = "image/svg+xml"
-                                        putExtra(Intent.EXTRA_STREAM, uri)
-                                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                                    }
-                                    context.startActivity(Intent.createChooser(shareIntent, "تصدير الرسم"))
-                                }.onFailure {
-                                    Toast.makeText(context, "تعذر تصدير الملف", Toast.LENGTH_SHORT).show()
-                                }
-                            }) { Text("SVG") }
-                            TextButton(onClick = {
-                                runCatching {
-                                    val uri = PdfExporter.export(context, document)
-                                    val shareIntent = Intent(Intent.ACTION_SEND).apply {
-                                        type = "application/pdf"
-                                        putExtra(Intent.EXTRA_STREAM, uri)
-                                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                                    }
-                                    context.startActivity(Intent.createChooser(shareIntent, "تصدير PDF"))
-                                }.onFailure {
-                                    Toast.makeText(context, "تعذر إنشاء PDF", Toast.LENGTH_SHORT).show()
-                                }
-                            }) { Text("PDF") }
-                            TextButton(onClick = {
-                                runCatching {
-                                    val uri = DxfExporter.export(context, document)
-                                    val shareIntent = Intent(Intent.ACTION_SEND).apply {
-                                        type = "application/dxf"
-                                        putExtra(Intent.EXTRA_STREAM, uri)
-                                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                                    }
-                                    context.startActivity(Intent.createChooser(shareIntent, "تصدير DXF"))
-                                }.onFailure {
-                                    Toast.makeText(context, "تعذر إنشاء DXF", Toast.LENGTH_SHORT).show()
-                                }
-                            }) { Text("DXF") }
+                            TextButton(onClick = { darkMode = !darkMode }) { Text(if (darkMode) "☀" else "☾", fontSize = 18.sp) }
+                            TextButton(onClick = { documentList = repository.listDocuments(); galleryDialog = true }) { Text("ملفاتي", fontSize = 11.sp) }
                         }
+                    }
+                    Row(
+                        modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(7.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        TextButton(onClick = { brushLibraryDialog = true }) { Text("✦ مكتبة الفرش") }
+                        TextButton(onClick = { imagePicker.launch(arrayOf("image/*")) }) { Text("＋ صورة") }
+                        TextButton(onClick = { pdfPicker.launch(arrayOf("application/pdf")) }) { Text("＋ PDF") }
+                        TextButton(onClick = { layersDialog = true }) { Text("▤ الطبقات") }
+                        TextButton(onClick = { pagesDialog = true }) { Text("▧ الصفحات") }
+                        TextButton(onClick = { artboardsDialog = true }) { Text("▦ اللوحات") }
+                        TextButton(onClick = {
+                            runCatching {
+                                val uri = SvgExporter.export(context, document)
+                                val shareIntent = Intent(Intent.ACTION_SEND).apply { type = "image/svg+xml"; putExtra(Intent.EXTRA_STREAM, uri); addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION) }
+                                context.startActivity(Intent.createChooser(shareIntent, "تصدير SVG"))
+                            }.onFailure { Toast.makeText(context, "تعذر تصدير SVG", Toast.LENGTH_SHORT).show() }
+                        }) { Text("⇧ SVG") }
+                        TextButton(onClick = {
+                            runCatching {
+                                val uri = PdfExporter.export(context, document)
+                                val shareIntent = Intent(Intent.ACTION_SEND).apply { type = "application/pdf"; putExtra(Intent.EXTRA_STREAM, uri); addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION) }
+                                context.startActivity(Intent.createChooser(shareIntent, "تصدير PDF"))
+                            }.onFailure { Toast.makeText(context, "تعذر إنشاء PDF", Toast.LENGTH_SHORT).show() }
+                        }) { Text("⇧ PDF") }
+                        TextButton(onClick = {
+                            runCatching {
+                                val uri = PsdExporter.export(context, document)
+                                val shareIntent = Intent(Intent.ACTION_SEND).apply { type = "image/vnd.adobe.photoshop"; putExtra(Intent.EXTRA_STREAM, uri); addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION) }
+                                context.startActivity(Intent.createChooser(shareIntent, "تصدير PSD"))
+                            }.onFailure { Toast.makeText(context, it.message ?: "تعذر إنشاء PSD", Toast.LENGTH_LONG).show() }
+                        }) { Text("⇧ PSD") }
+                        TextButton(onClick = {
+                            runCatching {
+                                val uri = DxfExporter.export(context, document)
+                                val shareIntent = Intent(Intent.ACTION_SEND).apply { type = "application/dxf"; putExtra(Intent.EXTRA_STREAM, uri); addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION) }
+                                context.startActivity(Intent.createChooser(shareIntent, "تصدير DXF"))
+                            }.onFailure { Toast.makeText(context, "تعذر إنشاء DXF", Toast.LENGTH_SHORT).show() }
+                        }) { Text("⇧ DXF") }
                     }
 
                     Card(
                         modifier = Modifier.fillMaxWidth().weight(1f),
-                        shape = RoundedCornerShape(22.dp)
+                        shape = RoundedCornerShape(24.dp),
+                        elevation = androidx.compose.material3.CardDefaults.cardElevation(defaultElevation = 3.dp)
                     ) {
                         Box(modifier = Modifier.fillMaxSize().padding(4.dp)) {
                             Canvas(
@@ -308,7 +364,7 @@ private fun MafahimApp() {
                                                 CanvasGeometry.normalizedTilt(event.getAxisValue(MotionEvent.AXIS_TILT, index)),
                                                 CanvasGeometry.normalizedOrientation(event.getAxisValue(MotionEvent.AXIS_ORIENTATION, index))
                                             )
-                                            return CanvasGeometry.toWorld(raw, currentZoom, currentPan.x, currentPan.y)
+                                            return snapped(CanvasGeometry.toWorld(raw, currentZoom, currentPan.x, currentPan.y))
                                         }
                                         fun centroid(): Offset {
                                             var x = 0f
@@ -339,7 +395,7 @@ private fun MafahimApp() {
                                                     CanvasGeometry.normalizedTilt(event.getHistoricalAxisValue(MotionEvent.AXIS_TILT, index, h)),
                                                     CanvasGeometry.normalizedOrientation(event.getHistoricalAxisValue(MotionEvent.AXIS_ORIENTATION, index, h))
                                                 )
-                                                gesturePoints.add(CanvasGeometry.toWorld(sample, currentZoom, currentPan.x, currentPan.y))
+                                                gesturePoints.add(snapped(CanvasGeometry.toWorld(sample, currentZoom, currentPan.x, currentPan.y)))
                                             }
                                             gesturePoints.add(pointAt(index))
                                         }
@@ -347,11 +403,17 @@ private fun MafahimApp() {
                                             MotionEvent.ACTION_DOWN -> {
                                                 gesturePoints.clear()
                                                 activeTool = currentTool
-                                                drawingGesture = activeTool != BrushTool.MOVE
+                                                drawingGesture = activeTool != BrushTool.MOVE && activeTool != BrushTool.SELECT && activeTool != BrushTool.GUIDE
                                                 panningGesture = activeTool == BrushTool.MOVE
                                                 previousCentroid = Offset(event.x, event.y)
                                                 previousSpan = 0f
-                                                if (drawingGesture) appendSamples()
+                                                if (activeTool == BrushTool.SELECT) {
+                                                    val hit = pointAt(0)
+                                                    canvasSelection = CanvasEditingEngine.toggleSelection(canvasSelection, CanvasSelectionEngine.hitTest(document, hit.x, hit.y, 12f / currentZoom.coerceAtLeast(0.2f)))
+                                                } else if (activeTool == BrushTool.GUIDE) {
+                                                    val anchor = pointAt(0)
+                                                    applyDocument(document.copy(guides = document.guides + ShapeGuide(UUID.randomUUID().toString(), ShapeGuideType.LINE, anchor, guideAngleDegrees)))
+                                                } else if (drawingGesture) appendSamples()
                                             }
                                             MotionEvent.ACTION_POINTER_DOWN -> {
                                                 drawingGesture = false
@@ -398,7 +460,7 @@ private fun MafahimApp() {
                                                     }
                                                     if (tool == BrushTool.MEASURE) {
                                                         val distance = CanvasGeometry.distance(gesturePoints.first(), gesturePoints.last())
-                                                        Toast.makeText(context, "القياس: " + String.format("%.1f", distance), Toast.LENGTH_SHORT).show()
+                                                        Toast.makeText(context, "القياس: " + CanvasMeasurement.label(gesturePoints.first(), gesturePoints.last(), measurementUnit), Toast.LENGTH_SHORT).show()
                                                     }
                                                     addStrokeNow(
                                                         DrawStroke(
@@ -429,7 +491,19 @@ private fun MafahimApp() {
                                         true
                                     }
                             ) {
-                                drawRect(Color(0xFFFCFCFA))
+                                val pageBackground = document.pages.firstOrNull { it.id == document.activePageId }?.backgroundColor ?: 0xFFFCFCFA.toInt()
+                                drawRect(Color(if (document.artboards.none { it.visible }) pageBackground else 0xFFFCFCFA.toInt()))
+                                document.artboards.filter { it.visible }.forEach { artboard ->
+                                    val topLeft = Offset(artboard.x * zoom + pan.x, artboard.y * zoom + pan.y)
+                                    val boardSize = Size(artboard.width * zoom, artboard.height * zoom)
+                                    drawRect(Color(artboard.backgroundColor), topLeft, boardSize)
+                                    drawRect(
+                                        color = if (document.activeArtboardId == artboard.id) Color(0xFF1976D2) else Color(0xFF9AA7B5),
+                                        topLeft = topLeft,
+                                        size = boardSize,
+                                        style = Stroke(width = if (document.activeArtboardId == artboard.id) 2.5f else 1f)
+                                    )
+                                }
                                 val spacing = 34f * zoom.coerceIn(0.2f, 8f)
                                 if (spacing >= 8f) {
                                     var gx = ((pan.x % spacing) + spacing) % spacing
@@ -446,19 +520,29 @@ private fun MafahimApp() {
 
                                 document.images.forEach { image ->
                                     val bitmap = imageBitmaps[image.fileName] ?: return@forEach
-                                    drawImage(
-                                        image = bitmap,
-                                        dstOffset = IntOffset(
-                                            (image.x * zoom + pan.x).toInt(),
-                                            (image.y * zoom + pan.y).toInt()
-                                        ),
-                                        dstSize = IntSize(
-                                            (image.width * zoom).toInt().coerceAtLeast(1),
-                                            (image.height * zoom).toInt().coerceAtLeast(1)
+                                    rotate(
+                                        degrees = image.rotationDegrees,
+                                        pivot = Offset((image.x + image.width / 2f) * zoom + pan.x, (image.y + image.height / 2f) * zoom + pan.y)
+                                    ) {
+                                        drawImage(
+                                            image = bitmap,
+                                            dstOffset = IntOffset((image.x * zoom + pan.x).toInt(), (image.y * zoom + pan.y).toInt()),
+                                            dstSize = IntSize((image.width * zoom).toInt().coerceAtLeast(1), (image.height * zoom).toInt().coerceAtLeast(1))
                                         )
-                                    )
+                                    }
                                 }
 
+                                document.guides.filter { it.enabled }.forEach { guide ->
+                                    val angle = Math.toRadians(guide.angleDegrees.toDouble())
+                                    val dx = kotlin.math.cos(angle).toFloat()
+                                    val dy = kotlin.math.sin(angle).toFloat()
+                                    val origin = Offset(guide.origin.x * zoom + pan.x, guide.origin.y * zoom + pan.y)
+                                    if (guide.type == ShapeGuideType.LINE || guide.type == ShapeGuideType.PARALLEL || guide.type == ShapeGuideType.PERPENDICULAR) {
+                                        val ux = if (guide.type == ShapeGuideType.PERPENDICULAR) -dy else dx
+                                        val uy = if (guide.type == ShapeGuideType.PERPENDICULAR) dx else dy
+                                        drawLine(Color(0xFF3C8DAD).copy(alpha = 0.65f), origin - Offset(ux, uy) * 5000f, origin + Offset(ux, uy) * 5000f, strokeWidth = 1.2f)
+                                    }
+                                }
                                 val visibleLayers = document.layers.filter { it.visible }.associateBy { it.id }
                                 document.strokes.forEach { stroke ->
                                     val layer = visibleLayers[stroke.layerId] ?: return@forEach
@@ -501,6 +585,14 @@ private fun MafahimApp() {
                                         }
                                     }
                                 }
+                                CanvasSelectionEngine.bounds(document, canvasSelection)?.let { bounds ->
+                                    drawRect(
+                                        color = Color(0xFF1976D2),
+                                        topLeft = Offset(bounds.left * zoom + pan.x, bounds.top * zoom + pan.y),
+                                        size = Size(bounds.width * zoom, bounds.height * zoom),
+                                        style = Stroke(width = 2f)
+                                    )
+                                }
                             }
                             Surface(
                                 modifier = Modifier.align(Alignment.TopStart).padding(9.dp),
@@ -532,7 +624,11 @@ private fun MafahimApp() {
                                 BrushTool.LINE to "خط",
                                 BrushTool.RECTANGLE to "مستطيل",
                                 BrushTool.ELLIPSE to "بيضاوي",
-                                BrushTool.MEASURE to "قياس"
+                                BrushTool.MEASURE to "قياس",
+                                BrushTool.SELECT to "تحديد",
+                                BrushTool.GUIDE to "دليل",
+                                BrushTool.ROUND_BRUSH to "فرشاة دائرية",
+                                BrushTool.CHISEL to "قلم عريض"
                             ).forEach { (tool, label) ->
                                 FilterChip(
                                     selected = selectedTool == tool,
@@ -542,6 +638,50 @@ private fun MafahimApp() {
                             }
                         }
 
+                        Row(
+                            modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            FilterChip(selected = snapEnabled, onClick = { snapEnabled = !snapEnabled }, label = { Text("التقاط ذكي", fontSize = 11.sp) })
+                            TextButton(onClick = { guideAngleDegrees = if (guideAngleDegrees == 0f) 90f else 0f }) { Text(if (guideAngleDegrees == 0f) "دليل أفقي" else "دليل رأسي") }
+                            TextButton(onClick = { measurementUnit = MeasurementUnit.entries[(measurementUnit.ordinal + 1) % MeasurementUnit.entries.size] }) { Text("وحدة: ${measurementUnit.symbol}") }
+                            TextButton(onClick = { applyDocument(document.copy(guides = emptyList())) }) { Text("مسح الأدلة") }
+                            TextButton(onClick = { canvasSelection = CanvasEditingEngine.selectAll(document) }) { Text("تحديد الكل") }
+                            if (!clipboard.isEmpty) {
+                                TextButton(onClick = {
+                                    val (next, selection) = CanvasEditingEngine.paste(document, clipboard)
+                                    applyDocument(next)
+                                    canvasSelection = selection
+                                }) { Text("لصق") }
+                            }
+                            if (canvasSelection.imageIds.size == 1) {
+                                TextButton(onClick = {
+                                    cropDialogImageId = canvasSelection.imageIds.first()
+                                    cropFrame = ImageCropFrame()
+                                }) { Text("قص الصورة") }
+                            }
+                            if (!canvasSelection.isEmpty) {
+                                TextButton(onClick = { clipboard = CanvasEditingEngine.copy(document, canvasSelection) }) { Text("نسخ") }
+                                TextButton(onClick = {
+                                    val (next, copied) = CanvasEditingEngine.cut(document, canvasSelection)
+                                    clipboard = copied
+                                    applyDocument(next)
+                                    canvasSelection = CanvasSelection()
+                                }) { Text("قص") }
+                                TextButton(onClick = { applyDocument(CanvasSelectionEngine.transform(document, canvasSelection, SelectionTransform(translateX = -10f))) }) { Text("←") }
+                                TextButton(onClick = { applyDocument(CanvasSelectionEngine.transform(document, canvasSelection, SelectionTransform(translateX = 10f))) }) { Text("→") }
+                                TextButton(onClick = { applyDocument(CanvasSelectionEngine.transform(document, canvasSelection, SelectionTransform(translateY = -10f))) }) { Text("↑") }
+                                TextButton(onClick = { applyDocument(CanvasSelectionEngine.transform(document, canvasSelection, SelectionTransform(translateY = 10f))) }) { Text("↓") }
+                                TextButton(onClick = { applyDocument(CanvasSelectionEngine.transform(document, canvasSelection, SelectionTransform(scaleX = 1.1f, scaleY = 1.1f))) }) { Text("تكبير") }
+                                TextButton(onClick = { applyDocument(CanvasSelectionEngine.transform(document, canvasSelection, SelectionTransform(scaleX = 0.9f, scaleY = 0.9f))) }) { Text("تصغير") }
+                                TextButton(onClick = { applyDocument(CanvasSelectionEngine.transform(document, canvasSelection, SelectionTransform(rotationDegrees = 15f))) }) { Text("↻") }
+                                TextButton(onClick = {
+                                    applyDocument(CanvasEditingEngine.delete(document, canvasSelection))
+                                    canvasSelection = CanvasSelection()
+                                }) { Text("حذف") }
+                            }
+                        }
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             verticalAlignment = Alignment.CenterVertically,
@@ -565,6 +705,7 @@ private fun MafahimApp() {
                                     )
                                 }
                             }
+                            TextButton(onClick = { customColorHex = CanvasColorEngine.hex(selectedColor); colorDialog = true }) { Text("مخصص") }
                             Text("${brushWidth.toInt()} px", fontSize = 11.sp)
                         }
                         Slider(
@@ -580,7 +721,11 @@ private fun MafahimApp() {
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        TextButton(onClick = { layersDialog = true }) { Text("الطبقات (${document.layers.size})") }
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            TextButton(onClick = { layersDialog = true }) { Text("الطبقات (${document.layers.size})") }
+                            TextButton(onClick = { artboardsDialog = true }) { Text("اللوحات (${document.artboards.size})") }
+                            TextButton(onClick = { pagesDialog = true }) { Text("الصفحات (${document.pages.size})") }
+                        }
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             TextButton(onClick = { zoom = (zoom / 1.2f).coerceIn(0.25f, 5f) }) { Text("−") }
                             Text("${(zoom * 100).toInt()}%", fontSize = 11.sp)
@@ -591,6 +736,64 @@ private fun MafahimApp() {
                 }
             }
         }
+    }
+
+    if (brushLibraryDialog) {
+        AlertDialog(
+            onDismissRequest = { brushLibraryDialog = false },
+            title = {
+                Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                    Text("مكتبة الفرش", fontWeight = FontWeight.Bold)
+                    Text("اختر أداة الرسم المناسبة لأسلوبك", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text("الفرش الأساسية", fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.primary)
+                    listOf(
+                        BrushTool.PEN to "قلم حبر",
+                        BrushTool.PENCIL to "قلم رصاص",
+                        BrushTool.MARKER to "قلم تحديد",
+                        BrushTool.ROUND_BRUSH to "فرشاة ناعمة",
+                        BrushTool.CHISEL to "قلم عريض",
+                        BrushTool.ERASER to "ممحاة"
+                    ).chunked(2).forEach { rowTools ->
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            rowTools.forEach { (tool, label) ->
+                                FilterChip(
+                                    modifier = Modifier.weight(1f),
+                                    selected = selectedTool == tool,
+                                    onClick = { selectedTool = tool; brushLibraryDialog = false },
+                                    label = { Text(label, fontSize = 12.sp) }
+                                )
+                            }
+                        }
+                    }
+                    androidx.compose.material3.HorizontalDivider()
+                    Text("أدوات الرسم والتحرير", fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.primary)
+                    listOf(
+                        BrushTool.LINE to "خط مستقيم",
+                        BrushTool.RECTANGLE to "مستطيل",
+                        BrushTool.ELLIPSE to "دائرة وبيضاوي",
+                        BrushTool.SELECT to "تحديد العناصر",
+                        BrushTool.MOVE to "تحريك اللوحة",
+                        BrushTool.GUIDE to "أدلة هندسية"
+                    ).chunked(2).forEach { rowTools ->
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            rowTools.forEach { (tool, label) ->
+                                FilterChip(
+                                    modifier = Modifier.weight(1f),
+                                    selected = selectedTool == tool,
+                                    onClick = { selectedTool = tool; brushLibraryDialog = false },
+                                    label = { Text(label, fontSize = 12.sp) }
+                                )
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = { TextButton(onClick = { brushLibraryDialog = false }) { Text("تم") } }
+        )
     }
 
     if (layersDialog) {
@@ -606,7 +809,33 @@ private fun MafahimApp() {
                                 onClick = { activeLayerId = layer.id },
                                 enabled = layer.visible
                             )
-                            Text(layer.name, modifier = Modifier.weight(1f), fontSize = 13.sp)
+                            Text(layer.name, modifier = Modifier.weight(1f), fontSize = 13.sp, maxLines = 1)
+                            Checkbox(
+                                checked = layer.locked,
+                                onCheckedChange = { locked ->
+                                    applyDocument(document.copy(layers = document.layers.map { if (it.id == layer.id) it.copy(locked = locked) else it }))
+                                }
+                            )
+                            TextButton(onClick = { renameLayerId = layer.id; renameLayerName = layer.name }) { Text("اسم") }
+                            val layerIndex = document.layers.indexOfFirst { it.id == layer.id }
+                            TextButton(onClick = {
+                                if (layerIndex > 0) {
+                                    val reordered = document.layers.toMutableList()
+                                    val item = reordered.removeAt(layerIndex)
+                                    reordered.add(layerIndex - 1, item)
+                                    applyDocument(document.copy(layers = reordered))
+                                }
+                            }, enabled = layerIndex > 0) { Text("↑") }
+                            TextButton(onClick = {
+                                if (layerIndex in 0 until document.layers.lastIndex) {
+                                    val reordered = document.layers.toMutableList()
+                                    val item = reordered.removeAt(layerIndex)
+                                    reordered.add(layerIndex + 1, item)
+                                    applyDocument(document.copy(layers = reordered))
+                                }
+                            }, enabled = layerIndex in 0 until document.layers.lastIndex) { Text("↓") }
+                            TextButton(onClick = { applyDocument(document.copy(layers = document.layers.map { if (it.id == layer.id) it.copy(opacity = (it.opacity - 0.1f).coerceAtLeast(0f)) else it })) }) { Text("−") }
+                            TextButton(onClick = { applyDocument(document.copy(layers = document.layers.map { if (it.id == layer.id) it.copy(opacity = (it.opacity + 0.1f).coerceAtMost(1f)) else it })) }) { Text("+") }
                             Checkbox(
                                 checked = layer.visible,
                                 onCheckedChange = { visible ->
@@ -656,6 +885,176 @@ private fun MafahimApp() {
         )
     }
 
+    if (cropDialogImageId != null) {
+        val sourceImage = document.images.firstOrNull { it.id == cropDialogImageId }
+        val sourceBitmap = sourceImage?.let { imageBitmaps[it.fileName] }
+        AlertDialog(
+            onDismissRequest = { cropDialogImageId = null },
+            title = { Text("قص الصورة") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    if (sourceBitmap != null) {
+                        CropPreview(bitmap = sourceBitmap, frame = cropFrame, onFrameChange = { cropFrame = it })
+                        Text("اسحب المقابض الزرقاء لتحديد الجزء الذي تريد الاحتفاظ به.")
+                    } else {
+                        Text("جارٍ تجهيز الصورة أو تعذر تحميلها.")
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(enabled = sourceImage != null && sourceBitmap != null, onClick = {
+                    val original = sourceImage
+                    if (original != null) {
+                        scope.launch {
+                            val current = document
+                            val cropped = withContext(Dispatchers.IO) {
+                                repository.cropImage(original, cropFrame)
+                            }
+                            if (cropped != null) {
+                                applyDocument(current.copy(images = current.images.map {
+                                    if (it.id == original.id) cropped else it
+                                }))
+                                canvasSelection = CanvasSelection(imageIds = setOf(original.id))
+                            } else {
+                                Toast.makeText(context, "تعذر قص الصورة", Toast.LENGTH_SHORT).show()
+                            }
+                            cropDialogImageId = null
+                        }
+                    }
+                }) { Text("تطبيق القص") }
+            },
+            dismissButton = { TextButton(onClick = { cropDialogImageId = null }) { Text("إلغاء") } }
+        )
+    }
+
+    if (pagesDialog) {
+        AlertDialog(
+            onDismissRequest = { pagesDialog = false },
+            title = { Text("إدارة الصفحات") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    document.pages.forEach { page ->
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            RadioButton(
+                                selected = document.activePageId == page.id,
+                                onClick = {
+                                    val next = CanvasPageEngine.activate(document, page.id)
+                                    applyDocument(next)
+                                    activeLayerId = next.layers.firstOrNull()?.id ?: "layer-base"
+                                    canvasSelection = CanvasSelection()
+                                }
+                            )
+                            Text(page.name, modifier = Modifier.weight(1f), maxLines = 1)
+                            TextButton(onClick = {
+                                val next = CanvasPageEngine.duplicate(document, page.id)
+                                applyDocument(next)
+                                activeLayerId = next.layers.firstOrNull()?.id ?: "layer-base"
+                            }) { Text("نسخ") }
+                        }
+                    }
+                    Text("كل صفحة تحتفظ بطبقاتها ورسوماتها وصورها وأدلتها.")
+                }
+            },
+            confirmButton = {
+                Button(onClick = {
+                    val next = CanvasPageEngine.create(document, "الصفحة ${document.pages.size + 1}")
+                    applyDocument(next)
+                    activeLayerId = next.layers.firstOrNull()?.id ?: "layer-base"
+                    canvasSelection = CanvasSelection()
+                }) { Text("إضافة صفحة") }
+            },
+            dismissButton = { TextButton(onClick = { pagesDialog = false }) { Text("إغلاق") } }
+        )
+    }
+
+    if (colorDialog) {
+        AlertDialog(
+            onDismissRequest = { colorDialog = false },
+            title = { Text("لون مخصص وخلفية الصفحة") },
+            text = {
+                androidx.compose.material3.OutlinedTextField(
+                    value = customColorHex,
+                    onValueChange = { customColorHex = it.take(9) },
+                    singleLine = true,
+                    label = { Text("HEX مثل #FF336699") }
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    val parsed = CanvasColorEngine.parseHex(customColorHex)
+                    if (parsed != null) {
+                        selectedColor = parsed
+                        applyDocument(CanvasColorEngine.applyBackground(document, parsed))
+                        colorDialog = false
+                    } else Toast.makeText(context, "صيغة اللون غير صحيحة", Toast.LENGTH_SHORT).show()
+                }) { Text("تطبيق اللون والخلفية") }
+            },
+            dismissButton = { TextButton(onClick = { colorDialog = false }) { Text("إلغاء") } }
+        )
+    }
+
+    if (artboardsDialog) {
+        AlertDialog(
+            onDismissRequest = { artboardsDialog = false },
+            title = { Text("إدارة اللوحات الفنية") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    if (document.artboards.isEmpty()) Text("لا توجد لوحات فنية بعد")
+                    document.artboards.forEach { artboard ->
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            RadioButton(
+                                selected = document.activeArtboardId == artboard.id,
+                                onClick = { applyDocument(document.copy(activeArtboardId = artboard.id)) }
+                            )
+                            Text(artboard.name, modifier = Modifier.weight(1f), maxLines = 1)
+                            Checkbox(
+                                checked = artboard.visible,
+                                onCheckedChange = { visible -> applyDocument(document.copy(artboards = document.artboards.map { if (it.id == artboard.id) it.copy(visible = visible) else it })) }
+                            )
+                            TextButton(onClick = {
+                                val remaining = document.artboards.filterNot { it.id == artboard.id }
+                                val active = if (document.activeArtboardId == artboard.id) remaining.firstOrNull()?.id else document.activeArtboardId
+                                applyDocument(document.copy(artboards = remaining, activeArtboardId = active))
+                            }) { Text("حذف") }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                Button(onClick = {
+                    val artboard = DrawingArtboard(UUID.randomUUID().toString(), "لوحة فنية ${document.artboards.size + 1}", 0f, 0f, 1000f, 1400f)
+                    applyDocument(document.copy(artboards = document.artboards + artboard, activeArtboardId = artboard.id))
+                }) { Text("إضافة لوحة") }
+            },
+            dismissButton = { TextButton(onClick = { artboardsDialog = false }) { Text("إغلاق") } }
+        )
+    }
+
+    if (renameLayerId != null) {
+        AlertDialog(
+            onDismissRequest = { renameLayerId = null },
+            title = { Text("إعادة تسمية الطبقة") },
+            text = {
+                androidx.compose.material3.OutlinedTextField(
+                    value = renameLayerName,
+                    onValueChange = { renameLayerName = it.take(80) },
+                    singleLine = true,
+                    label = { Text("اسم الطبقة") }
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    val id = renameLayerId
+                    if (id != null && renameLayerName.isNotBlank()) {
+                        applyDocument(document.copy(layers = document.layers.map { if (it.id == id) it.copy(name = renameLayerName.trim()) else it }))
+                    }
+                    renameLayerId = null
+                }) { Text("حفظ") }
+            },
+            dismissButton = { TextButton(onClick = { renameLayerId = null }) { Text("إلغاء") } }
+        )
+    }
+
     if (galleryDialog) {
         AlertDialog(
             onDismissRequest = { galleryDialog = false },
@@ -663,7 +1062,7 @@ private fun MafahimApp() {
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Button(onClick = {
-                        document = DrawingDocument.empty()
+                        document = CanvasPageEngine.normalized(DrawingDocument.empty())
                         activeLayerId = document.layers.first().id
                         undoStack.clear()
                         redoStack.clear()

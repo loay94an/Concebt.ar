@@ -60,7 +60,7 @@ jobs:
           sha256sum "$APK"
 
       - name: Upload debug APK
-        if: github.event_name != 'pull_request'
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: concepts-arabic-debug-apk

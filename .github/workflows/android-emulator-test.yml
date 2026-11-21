@@ -19,10 +19,11 @@ permissions:
 
 jobs:
   emulator:
-    # Pin the known-stable hosted image; ubuntu-latest can move to a new
-    # runner image with emulator/KVM regressions independently of app code.
+    # GitHub's Linux VM has no hardware virtualization; force the emulator's TCG software CPU.
     runs-on: ubuntu-24.04
     timeout-minutes: 50
+    env:
+      ANDROID_I_WANT_MY_TCG: 'yes'
     steps:
       - uses: actions/checkout@v4
 
@@ -39,18 +40,21 @@ jobs:
 
       - name: Install Android SDK
         run: |
-          yes | sdkmanager 'platforms;android-35' 'build-tools;35.0.0' 'emulator' 'platform-tools' 'system-images;android-35;google_apis;x86_64'
+          yes | sdkmanager 'platforms;android-35' 'build-tools;35.0.0' 'emulator' 'platform-tools' 'system-images;android-30;default;x86_64'
 
       - name: Run UI smoke test on Android emulator
         uses: reactivecircus/android-emulator-runner@v2
         with:
-          api-level: 35
-          target: google_apis
+          api-level: 30
+          target: default
           arch: x86_64
           profile: pixel_2
           emulator-boot-timeout: 900
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -memory 1536 -cores 2
           disable-animations: true
-          script: gradle connectedDebugAndroidTest --stacktrace
+          script: |
+            adb devices -l
+            gradle connectedDebugAndroidTest --stacktrace
 
       - name: Upload instrumentation reports
         if: always()

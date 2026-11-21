@@ -42,7 +42,11 @@ object PdfExporter {
             val file = File(context.filesDir, "images/${File(image.fileName).name}")
             val bitmap = BitmapFactory.decodeFile(file.absolutePath)
             if (bitmap != null) {
-                canvas.drawBitmap(bitmap, null, RectF(image.x, image.y, image.x + image.width, image.y + image.height), Paint(Paint.ANTI_ALIAS_FLAG))
+                val rect = RectF(image.x, image.y, image.x + image.width, image.y + image.height)
+                canvas.save()
+                canvas.rotate(image.rotationDegrees, rect.centerX(), rect.centerY())
+                canvas.drawBitmap(bitmap, null, rect, Paint(Paint.ANTI_ALIAS_FLAG))
+                canvas.restore()
                 bitmap.recycle()
             }
         }
