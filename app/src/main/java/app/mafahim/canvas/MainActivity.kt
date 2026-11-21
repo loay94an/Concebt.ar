@@ -119,7 +119,8 @@ private fun MafahimApp() {
     }
 
     fun addStroke(stroke: DrawStroke) {
-        if (document.layers.none { it.id == stroke.layerId }) return
+        val targetLayer = document.layers.firstOrNull { it.id == stroke.layerId } ?: return
+        if (!targetLayer.visible) return
         applyDocument(document.copy(strokes = document.strokes + stroke))
     }
 
@@ -403,14 +404,28 @@ private fun MafahimApp() {
                 Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
                     document.layers.forEach { layer ->
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            RadioButton(selected = activeLayerId == layer.id, onClick = { activeLayerId = layer.id })
+                            RadioButton(
+                                selected = activeLayerId == layer.id,
+                                onClick = { activeLayerId = layer.id },
+                                enabled = layer.visible
+                            )
                             Text(layer.name, modifier = Modifier.weight(1f), fontSize = 13.sp)
                             Checkbox(
                                 checked = layer.visible,
                                 onCheckedChange = { visible ->
-                                    applyDocument(document.copy(layers = document.layers.map {
-                                        if (it.id == layer.id) it.copy(visible = visible) else it
-                                    }))
+                                    val otherVisibleLayer = document.layers.firstOrNull {
+                                        it.id != layer.id && it.visible
+                                    }
+                                    if (!visible && layer.id == activeLayerId && otherVisibleLayer == null) {
+                                        Toast.makeText(context, "يجب إبقاء طبقة واحدة ظاهرة على الأقل", Toast.LENGTH_SHORT).show()
+                                    } else {
+                                        applyDocument(document.copy(layers = document.layers.map {
+                                            if (it.id == layer.id) it.copy(visible = visible) else it
+                                        }))
+                                        if (!visible && layer.id == activeLayerId) {
+                                            activeLayerId = otherVisibleLayer!!.id
+                                        }
+                                    }
                                 }
                             )
                             TextButton(
@@ -421,10 +436,13 @@ private fun MafahimApp() {
                                             layers = nextLayers,
                                             strokes = document.strokes.filterNot { it.layerId == layer.id }
                                         ))
-                                        if (activeLayerId == layer.id) activeLayerId = nextLayers.last().id
+                                        if (activeLayerId == layer.id) {
+                                            activeLayerId = nextLayers.firstOrNull { it.visible }?.id ?: nextLayers.first().id
+                                        }
                                     }
                                 },
-                                enabled = document.layers.size > 1
+                                enabled = document.layers.size > 1 &&
+                                    (layer.id != activeLayerId || document.layers.any { it.id != layer.id && it.visible })
                             ) { Text("حذف") }
                         }
                     }
