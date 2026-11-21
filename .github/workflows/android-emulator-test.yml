@@ -19,10 +19,11 @@ permissions:
 
 jobs:
   emulator:
-    # macOS hosted runners provide the hypervisor support needed by the Android emulator.
-    # Linux hosted runners repeatedly failed before ADB registered emulator-5554.
-    runs-on: macos-14
+    # GitHub's Linux VM has no hardware virtualization; force the emulator's TCG software CPU.
+    runs-on: ubuntu-24.04
     timeout-minutes: 50
+    env:
+      ANDROID_I_WANT_MY_TCG: 'yes'
     steps:
       - uses: actions/checkout@v4
 
