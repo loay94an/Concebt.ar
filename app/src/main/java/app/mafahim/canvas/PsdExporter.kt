@@ -42,7 +42,7 @@ object PsdExporter {
             canvas.translate(offsetX * scale, offsetY * scale)
             canvas.scale(scale, scale)
             document.strokes.filter { it.layerId == layer.id }.forEach { stroke ->
-                drawStroke(canvas, stroke, layer.opacity)
+                drawStroke(canvas, stroke)
             }
             bitmap
         }.toMutableList()
@@ -73,7 +73,7 @@ object PsdExporter {
             }
         }
         val rasterLayers = layers.mapIndexed { index, bitmap ->
-            PsdRasterLayer(document.layers.getOrNull(index)?.name ?: "Images", document.layers.getOrNull(index)?.visible ?: true, rgba(bitmap))
+            PsdRasterLayer(document.layers.getOrNull(index)?.name ?: "Images", document.layers.getOrNull(index)?.visible ?: true, rgba(bitmap), document.layers.getOrNull(index)?.opacity ?: 1f)
         }
         val bytes = PsdWriter.write(width, height, rasterLayers, rgba(composite))
         layers.forEach { it.recycle() }
@@ -85,11 +85,11 @@ object PsdExporter {
         return FileProvider.getUriForFile(context, "${context.packageName}.files", output)
     }
 
-    private fun drawStroke(canvas: Canvas, stroke: DrawStroke, layerOpacity: Float) {
+    private fun drawStroke(canvas: Canvas, stroke: DrawStroke) {
         if (stroke.points.isEmpty()) return
         val base = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = stroke.color
-            alpha = (stroke.opacity.coerceIn(0f, 1f) * layerOpacity.coerceIn(0f, 1f) * 255f).toInt()
+            alpha = (stroke.opacity.coerceIn(0f, 1f) * 255f).toInt()
             style = Paint.Style.STROKE
             strokeCap = Paint.Cap.ROUND
             strokeJoin = Paint.Join.ROUND
