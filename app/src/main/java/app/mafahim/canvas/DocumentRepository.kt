@@ -100,6 +100,7 @@ class DocumentRepository(context: Context) {
                 output.writeFloat(image.y.finiteOr(0f))
                 output.writeFloat(image.width.finiteOr(1f).coerceIn(1f, 10000f))
                 output.writeFloat(image.height.finiteOr(1f).coerceIn(1f, 10000f))
+                output.writeFloat(image.rotationDegrees.finiteOr(0f).coerceIn(-360f, 360f))
             }
             output.flush()
         }
@@ -186,7 +187,8 @@ class DocumentRepository(context: Context) {
                         val y = input.readFloat().finiteOr(0f)
                         val width = input.readFloat().finiteOr(1f).coerceIn(1f, 10000f)
                         val height = input.readFloat().finiteOr(1f).coerceIn(1f, 10000f)
-                        DrawingImage(fileName.removeSuffix(".png"), fileName, x, y, width, height)
+                        val rotation = if (formatVersion >= 6) input.readFloat().finiteOr(0f).coerceIn(-360f, 360f) else 0f
+                        DrawingImage(fileName.removeSuffix(".png"), fileName, x, y, width, height, rotation)
                     }
                 } else emptyList()
                 DrawingDocument(title, layers, strokes, documentId, images)
@@ -198,7 +200,7 @@ class DocumentRepository(context: Context) {
 
     companion object {
         private const val MAGIC = 0x4D464D31
-        private const val FORMAT_VERSION = 5
+        private const val FORMAT_VERSION = 6
         private const val MAX_TEXT = 256
         private const val MAX_LAYERS = 128
         private const val MAX_STROKES = 100_000
