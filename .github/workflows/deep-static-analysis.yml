@@ -1,0 +1,82 @@
+name: Deep static analysis of original Concepts APK
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: concepts-deep-static-analysis
+  cancel-in-progress: false
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download and verify private original APK
+        env:
+          GH_TOKEN: ${{ secrets.APK_SOURCE_TOKEN }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/input"
+          gh release download concepts-original-2022.04.10 \
+            --repo loay94an/reference-and-books-on-patterns-and-models \
+            --pattern 'Concepts.2022.04.10.apk' --dir "$RUNNER_TEMP/input"
+          APK="$RUNNER_TEMP/input/Concepts.2022.04.10.apk"
+          test -s "$APK"
+          echo "APK=$APK" >> "$GITHUB_ENV"
+          echo "47e4e5244f2e2284349888a3fad00f407c1f0503429ec3d0e469f24924a98fdf  $APK" | sha256sum --check
+
+      - name: Set up Java and Python
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install JADX CLI
+        run: |
+          set -euo pipefail
+          curl -fsSL https://github.com/skylot/jadx/releases/download/v1.5.7/jadx-1.5.7.zip -o "$RUNNER_TEMP/jadx.zip"
+          mkdir -p "$RUNNER_TEMP/jadx"
+          unzip -q "$RUNNER_TEMP/jadx.zip" -d "$RUNNER_TEMP/jadx"
+          chmod +x "$RUNNER_TEMP/jadx/bin/jadx"
+          "$RUNNER_TEMP/jadx/bin/jadx" --version
+
+      - name: Decompile and inventory
+        run: |
+          set -euo pipefail
+          "$RUNNER_TEMP/jadx/bin/jadx" --show-bad-code --no-res \
+            -d "$RUNNER_TEMP/jadx-output" "$APK"
+          python tools/reverse_engineering/deep_report.py \
+            --apk "$APK" \
+            --sources "$RUNNER_TEMP/jadx-output/sources" \
+            --output reverse-engineering/CONCEPTS_DEEP_STATIC_REPORT_AR.md
+          test -s reverse-engineering/CONCEPTS_DEEP_STATIC_REPORT_AR.md
+
+      - name: Commit sanitized report
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add reverse-engineering/CONCEPTS_DEEP_STATIC_REPORT_AR.md
+          git commit -m "docs: add deep static analysis report for Concepts" || {
+            git diff --cached --quiet && exit 0
+            exit 1
+          }
+          git push
+
+      - name: Upload sanitized report
+        uses: actions/upload-artifact@v4
+        with:
+          name: concepts-deep-static-report-ar
+          path: reverse-engineering/CONCEPTS_DEEP_STATIC_REPORT_AR.md
+          if-no-files-found: error
+          retention-days: 30
