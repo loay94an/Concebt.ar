@@ -55,12 +55,12 @@ class DocumentRepository(context: Context) {
             ?: throw IllegalArgumentException("تعذر فتح ملف PDF")
         descriptor.use { parcel ->
             PdfRenderer(parcel).use { renderer ->
-                require(renderer.pageCount in 1..40) { "يدعم الاستيراد حتى 40 صفحة في المرة الواحدة" }
+                require(renderer.pageCount in 1..12) { "يدعم الاستيراد حتى 12 صفحة في المرة الواحدة لتجنب استهلاك الذاكرة" }
                 buildList {
                     var top = 60f
                     for (index in 0 until renderer.pageCount) {
                         renderer.openPage(index).use { page ->
-                            val scale = minOf(1.8f, 2000f / maxOf(page.width, page.height).toFloat())
+                            val scale = minOf(1.2f, 1200f / maxOf(page.width, page.height).toFloat())
                             val width = (page.width * scale).toInt().coerceAtLeast(1)
                             val height = (page.height * scale).toInt().coerceAtLeast(1)
                             val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
