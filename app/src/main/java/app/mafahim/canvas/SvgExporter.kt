@@ -45,7 +45,13 @@ object SvgExporter {
                 val hex = Integer.toHexString(stroke.color).takeLast(6).padStart(6, '0')
                 if (points.size == 1) {
                     val p = points.first()
-                    appendLine("""<circle cx="${fmt(p.x)}" cy="${fmt(p.y)}" r="${fmt(width / 2f)}" fill="#$hex" opacity="${fmt(opacity)}"/>""")
+                    val pressure = p.pressure.takeIf { it.isFinite() }?.coerceIn(0.05f, 1f) ?: 1f
+                    appendLine("""<circle cx="${fmt(p.x)}" cy="${fmt(p.y)}" r="${fmt(width * pressure / 2f)}" fill="#$hex" opacity="${fmt(opacity)}"/>""")
+                } else if (points.any { (it.pressure.takeIf(Float::isFinite) ?: 1f) < 0.999f }) {
+                    points.zipWithNext().forEach { (start, end) ->
+                        val pressure = (((start.pressure + end.pressure) / 2f).takeIf(Float::isFinite) ?: 1f).coerceIn(0.05f, 1f)
+                        appendLine("""<line x1="${fmt(start.x)}" y1="${fmt(start.y)}" x2="${fmt(end.x)}" y2="${fmt(end.y)}" stroke="#$hex" stroke-width="${fmt(width * pressure)}" opacity="${fmt(opacity)}" stroke-linecap="round"/>""")
+                    }
                 } else {
                     val serializedPoints = points.joinToString(" ") { "${fmt(it.x)},${fmt(it.y)}" }
                     appendLine("""<polyline points="$serializedPoints" fill="none" stroke="#$hex" stroke-width="${fmt(width)}" opacity="${fmt(opacity)}" stroke-linecap="round" stroke-linejoin="round"/>""")
