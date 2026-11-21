@@ -11,13 +11,22 @@ import java.io.FileOutputStream
 import java.nio.file.AtomicMoveNotSupportedException
 import java.nio.file.Files
 import java.nio.file.StandardCopyOption
+import java.util.UUID
+
+data class DocumentSummary(val id: String, val title: String, val modifiedAt: Long)
 
 class DocumentRepository(context: Context) {
-    private val target = File(context.filesDir, "mafahim-document.mfd")
-    private val temporary = File(context.filesDir, "mafahim-document.mfd.tmp")
+    private val documentsDir = File(context.filesDir, "documents")
+    private val legacyTarget = File(context.filesDir, "mafahim-document.mfd")
+
+    private fun targetFor(id: String) = File(documentsDir, safeId(id) + ".mfd")
+    private fun temporaryFor(id: String) = File(documentsDir, safeId(id) + ".mfd.tmp")
+    private fun safeId(id: String) = id.filter { it.isLetterOrDigit() || it == '-' || it == '_' }.take(80).ifBlank { UUID.randomUUID().toString() }
 
     @Synchronized
     fun save(document: DrawingDocument) {
+        val target = targetFor(document.id)
+        val temporary = temporaryFor(document.id)
         target.parentFile?.mkdirs()
         val layers = document.layers.take(MAX_LAYERS).ifEmpty {
             listOf(DrawingLayer("layer-base", "الطبقة الأولى"))
@@ -28,6 +37,7 @@ class DocumentRepository(context: Context) {
         DataOutputStream(BufferedOutputStream(FileOutputStream(temporary))).use { output ->
             output.writeInt(MAGIC)
             output.writeInt(FORMAT_VERSION)
+            output.writeUTF(document.id.take(MAX_TEXT))
             output.writeUTF(document.title.take(MAX_TEXT))
             output.writeInt(layers.size)
             layers.forEach { layer ->
@@ -67,12 +77,33 @@ class DocumentRepository(context: Context) {
 
     @Synchronized
     fun load(): DrawingDocument? {
-        if (!target.isFile) return null
+        val newest = documentsDir.listFiles { file -> file.isFile && file.extension == "mfd" }
+            ?.maxByOrNull { it.lastModified() }
+        return if (newest != null) loadFrom(newest) else loadFrom(legacyTarget)
+    }
+
+    @Synchronized
+    fun load(id: String): DrawingDocument? = loadFrom(targetFor(id))
+
+    @Synchronized
+    fun listDocuments(): List<DocumentSummary> {
+        val files = documentsDir.listFiles { file -> file.isFile && file.extension == "mfd" } ?: return emptyList()
+        return files.mapNotNull { file ->
+            loadFrom(file)?.let { DocumentSummary(it.id, it.title, file.lastModified()) }
+        }.sortedByDescending { it.modifiedAt }
+    }
+
+    @Synchronized
+    fun delete(id: String): Boolean = targetFor(id).delete()
+
+    private fun loadFrom(file: File): DrawingDocument? {
+        if (!file.isFile) return null
         return runCatching {
-            DataInputStream(BufferedInputStream(FileInputStream(target))).use { input ->
+            DataInputStream(BufferedInputStream(FileInputStream(file))).use { input ->
                 require(input.readInt() == MAGIC) { "صيغة ملف غير معروفة" }
                 val formatVersion = input.readInt()
                 require(formatVersion in 1..FORMAT_VERSION) { "إصدار ملف غير مدعوم" }
+                val documentId = if (formatVersion >= 4) input.readUTF() else UUID.randomUUID().toString()
                 val title = input.readUTF()
                 val layerCount = input.readInt()
                 require(layerCount in 1..MAX_LAYERS) { "عدد الطبقات غير صالح" }
@@ -109,7 +140,7 @@ class DocumentRepository(context: Context) {
                     }
                     DrawStroke(id, layerId, tool, color, width, opacity, points)
                 }
-                DrawingDocument(title, layers, strokes)
+                DrawingDocument(title, layers, strokes, documentId)
             }
         }.getOrNull()
     }
@@ -118,7 +149,7 @@ class DocumentRepository(context: Context) {
 
     companion object {
         private const val MAGIC = 0x4D464D31
-        private const val FORMAT_VERSION = 3
+        private const val FORMAT_VERSION = 4
         private const val MAX_TEXT = 256
         private const val MAX_LAYERS = 128
         private const val MAX_STROKES = 100_000
