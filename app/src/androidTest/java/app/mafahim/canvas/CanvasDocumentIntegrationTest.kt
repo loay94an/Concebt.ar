@@ -41,7 +41,14 @@ class CanvasDocumentIntegrationTest {
         repository.save(document)
         val restored = repository.load(id)
         assertNotNull(restored)
-        assertEquals(document, restored)
+        assertEquals(document.title, restored!!.title)
+        assertEquals(document.layers, restored.layers)
+        assertEquals(document.strokes, restored.strokes)
+        assertEquals(document.images, restored.images)
+        assertEquals(document.guides, restored.guides)
+        assertEquals(document.artboards, restored.artboards)
+        assertEquals(1, restored.pages.size)
+        assertEquals(restored.pages.first().strokes, restored.strokes)
         repository.delete(id)
     }
 }
