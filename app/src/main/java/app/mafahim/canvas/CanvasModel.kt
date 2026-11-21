@@ -6,7 +6,7 @@ import kotlin.math.cos
 import kotlin.math.sin
 import java.util.UUID
 
-enum class BrushTool { PEN, PENCIL, MARKER, ERASER, MOVE, LINE, RECTANGLE, ELLIPSE, MEASURE }
+enum class BrushTool { PEN, PENCIL, MARKER, ERASER, MOVE, LINE, RECTANGLE, ELLIPSE, MEASURE, SELECT, GUIDE }
 
 data class CanvasPoint(val x: Float, val y: Float, val pressure: Float = 1f, val tilt: Float = 0f, val orientation: Float = 0f)
 
@@ -33,7 +33,8 @@ data class DrawingImage(
     val x: Float,
     val y: Float,
     val width: Float,
-    val height: Float
+    val height: Float,
+    val rotationDegrees: Float = 0f
 )
 
 data class DrawingDocument(
