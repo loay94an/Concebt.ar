@@ -33,7 +33,9 @@ object SvgExporter {
             Triple(stroke, points, width to opacity)
         }
 
-        val allPoints = drawable.flatMap { it.second }
+        val allPoints = drawable.flatMap { it.second } + document.images.flatMap { image ->
+            listOf(CanvasPoint(image.x, image.y), CanvasPoint(image.x + image.width, image.y + image.height))
+        }
         val padding = max(24f, (drawable.maxOfOrNull { it.third.first } ?: 5f) / 2f + 8f)
         val minX = (allPoints.minOfOrNull { it.x } ?: 0f) - padding
         val minY = (allPoints.minOfOrNull { it.y } ?: 0f) - padding
@@ -54,12 +56,12 @@ object SvgExporter {
                 val hex = Integer.toHexString(stroke.color).takeLast(6).padStart(6, '0')
                 if (points.size == 1) {
                     val p = points.first()
-                    val pressure = p.pressure.takeIf { it.isFinite() }?.coerceIn(0.05f, 1f) ?: 1f
-                    appendLine("""<circle cx="${fmt(p.x)}" cy="${fmt(p.y)}" r="${fmt(width * pressure / 2f)}" fill="#$hex" opacity="${fmt(opacity)}"/>""")
-                } else if (points.any { (it.pressure.takeIf { value -> value.isFinite() } ?: 1f) < 0.999f }) {
+                    val pressureWidth = CanvasGeometry.pressureTiltWidth(p, width)
+                    appendLine("""<circle cx="${fmt(p.x)}" cy="${fmt(p.y)}" r="${fmt(pressureWidth / 2f)}" fill="#$hex" opacity="${fmt(opacity)}"/>""")
+                } else if (points.any { (it.pressure.takeIf { value -> value.isFinite() } ?: 1f) < 0.999f || it.tilt > 0f }) {
                     points.zipWithNext().forEach { (start, end) ->
-                        val pressure = (((start.pressure + end.pressure) / 2f).takeIf { value -> value.isFinite() } ?: 1f).coerceIn(0.05f, 1f)
-                        appendLine("""<line x1="${fmt(start.x)}" y1="${fmt(start.y)}" x2="${fmt(end.x)}" y2="${fmt(end.y)}" stroke="#$hex" stroke-width="${fmt(width * pressure)}" opacity="${fmt(opacity)}" stroke-linecap="round"/>""")
+                        val segmentWidth = (CanvasGeometry.pressureTiltWidth(start, width) + CanvasGeometry.pressureTiltWidth(end, width)) / 2f
+                        appendLine("""<line x1="${fmt(start.x)}" y1="${fmt(start.y)}" x2="${fmt(end.x)}" y2="${fmt(end.y)}" stroke="#$hex" stroke-width="${fmt(segmentWidth)}" opacity="${fmt(opacity)}" stroke-linecap="round"/>""")
                     }
                 } else {
                     val serializedPoints = points.joinToString(" ") { "${fmt(it.x)},${fmt(it.y)}" }
