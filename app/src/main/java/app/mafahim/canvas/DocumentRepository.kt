@@ -248,7 +248,7 @@ class DocumentRepository(context: Context) {
                         DrawingArtboard(id, name, x, y, width, height, backgroundColor, visible)
                     }
                 } else emptyList()
-                val activeArtboardId = if (formatVersion >= 9) input.readUTF().ifBlank { null } else null
+                val activeArtboardId = if (formatVersion >= 9) input.readUTF().takeIf { it.isNotBlank() } else null
                 DrawingDocument(title, layers, strokes, documentId, images, guides, artboards, activeArtboardId)
             }
         }.getOrNull()
