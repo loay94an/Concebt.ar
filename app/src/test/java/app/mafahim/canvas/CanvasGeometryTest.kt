@@ -26,6 +26,23 @@ class CanvasGeometryTest {
     }
 
     @Test
+    fun smoothKeepsEndpointsAndAddsIntermediateSamples() {
+        val points = listOf(CanvasPoint(0f, 0f), CanvasPoint(10f, 10f), CanvasPoint(20f, 0f))
+        val smoothed = CanvasGeometry.smooth(points, subdivisions = 4)
+        assertEquals(9, smoothed.size)
+        assertEquals(points.first(), smoothed.first())
+        assertEquals(points.last(), smoothed.last())
+    }
+
+    @Test
+    fun tiltAndOrientationAreNormalized() {
+        assertEquals(0f, CanvasGeometry.normalizedTilt(-1f), 0.001f)
+        assertEquals((PI / 2.0).toFloat(), CanvasGeometry.normalizedTilt(9f), 0.001f)
+        assertEquals(0f, CanvasGeometry.normalizedOrientation(Float.NaN), 0.001f)
+        assertEquals(1.35f, CanvasGeometry.pressureTiltWidth(CanvasPoint(0f, 0f, 1f, (PI / 2.0).toFloat()), 1f), 0.001f)
+    }
+
+    @Test
     fun distanceUsesEuclideanMetric() {
         assertEquals(5f, CanvasGeometry.distance(CanvasPoint(0f, 0f), CanvasPoint(3f, 4f)), 0.001f)
     }
