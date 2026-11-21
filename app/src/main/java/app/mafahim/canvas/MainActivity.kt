@@ -206,7 +206,20 @@ private fun MafahimApp() {
                                 }.onFailure {
                                     Toast.makeText(context, "تعذر تصدير الملف", Toast.LENGTH_SHORT).show()
                                 }
-                            }) { Text("تصدير") }
+                            }) { Text("SVG") }
+                            TextButton(onClick = {
+                                runCatching {
+                                    val uri = PdfExporter.export(context, document)
+                                    val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                                        type = "application/pdf"
+                                        putExtra(Intent.EXTRA_STREAM, uri)
+                                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                    }
+                                    context.startActivity(Intent.createChooser(shareIntent, "تصدير PDF"))
+                                }.onFailure {
+                                    Toast.makeText(context, "تعذر إنشاء PDF", Toast.LENGTH_SHORT).show()
+                                }
+                            }) { Text("PDF") }
                         }
                     }
 
