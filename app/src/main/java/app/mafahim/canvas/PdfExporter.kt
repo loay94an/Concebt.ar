@@ -2,6 +2,7 @@ package app.mafahim.canvas
 
 import android.content.Context
 import android.graphics.Paint
+import android.graphics.BitmapFactory
 import android.graphics.Path
 import android.graphics.RectF
 import android.graphics.pdf.PdfDocument
@@ -34,6 +35,15 @@ object PdfExporter {
         canvas.save()
         canvas.translate(padding - minX * scale, padding - minY * scale)
         canvas.scale(scale, scale)
+
+        document.images.forEach { image ->
+            val file = File(context.filesDir, "images/${File(image.fileName).name}")
+            val bitmap = BitmapFactory.decodeFile(file.absolutePath)
+            if (bitmap != null) {
+                canvas.drawBitmap(bitmap, null, RectF(image.x, image.y, image.x + image.width, image.y + image.height), Paint(Paint.ANTI_ALIAS_FLAG))
+                bitmap.recycle()
+            }
+        }
 
         strokes.forEach { stroke ->
             val layer = visibleLayers[stroke.layerId] ?: return@forEach
