@@ -114,6 +114,8 @@ private fun MafahimApp() {
     val redoStack = remember { mutableStateListOf<DrawingDocument>() }
     var canvasSelection by remember { mutableStateOf(CanvasSelection()) }
     var snapEnabled by remember { mutableStateOf(false) }
+    var guideAngleDegrees by remember { mutableStateOf(0f) }
+    var measurementUnit by remember { mutableStateOf(MeasurementUnit.MILLIMETER) }
 
     LaunchedEffect(Unit) {
         val saved = withContext(Dispatchers.IO) { repository.load() }
@@ -378,7 +380,7 @@ private fun MafahimApp() {
                                                     canvasSelection = CanvasSelectionEngine.hitTest(document, hit.x, hit.y, 12f / currentZoom.coerceAtLeast(0.2f))
                                                 } else if (activeTool == BrushTool.GUIDE) {
                                                     val anchor = pointAt(0)
-                                                    applyDocument(document.copy(guides = document.guides + ShapeGuide(UUID.randomUUID().toString(), ShapeGuideType.LINE, anchor)))
+                                                    applyDocument(document.copy(guides = document.guides + ShapeGuide(UUID.randomUUID().toString(), ShapeGuideType.LINE, anchor, guideAngleDegrees)))
                                                 } else if (drawingGesture) appendSamples()
                                             }
                                             MotionEvent.ACTION_POINTER_DOWN -> {
@@ -426,7 +428,7 @@ private fun MafahimApp() {
                                                     }
                                                     if (tool == BrushTool.MEASURE) {
                                                         val distance = CanvasGeometry.distance(gesturePoints.first(), gesturePoints.last())
-                                                        Toast.makeText(context, "القياس: " + String.format("%.1f", distance), Toast.LENGTH_SHORT).show()
+                                                        Toast.makeText(context, "القياس: " + CanvasMeasurement.label(gesturePoints.first(), gesturePoints.last(), measurementUnit), Toast.LENGTH_SHORT).show()
                                                     }
                                                     addStrokeNow(
                                                         DrawStroke(
@@ -596,6 +598,9 @@ private fun MafahimApp() {
                             horizontalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
                             FilterChip(selected = snapEnabled, onClick = { snapEnabled = !snapEnabled }, label = { Text("التقاط ذكي", fontSize = 11.sp) })
+                            TextButton(onClick = { guideAngleDegrees = if (guideAngleDegrees == 0f) 90f else 0f }) { Text(if (guideAngleDegrees == 0f) "دليل أفقي" else "دليل رأسي") }
+                            TextButton(onClick = { measurementUnit = MeasurementUnit.entries[(measurementUnit.ordinal + 1) % MeasurementUnit.entries.size] }) { Text("وحدة: ${measurementUnit.symbol}") }
+                            TextButton(onClick = { applyDocument(document.copy(guides = emptyList())) }) { Text("مسح الأدلة") }
                             if (!canvasSelection.isEmpty) {
                                 TextButton(onClick = { applyDocument(CanvasSelectionEngine.transform(document, canvasSelection, SelectionTransform(translateX = -10f))) }) { Text("←") }
                                 TextButton(onClick = { applyDocument(CanvasSelectionEngine.transform(document, canvasSelection, SelectionTransform(translateX = 10f))) }) { Text("→") }
