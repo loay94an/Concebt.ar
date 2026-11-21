@@ -19,8 +19,8 @@ permissions:
 
 jobs:
   emulator:
-    # macOS runner provides native emulator acceleration; hosted Linux VM had no KVM.
-    runs-on: macos-14
+    # Use a compact Android 11 image to reduce software-emulation boot cost on hosted Linux.
+    runs-on: ubuntu-24.04
     timeout-minutes: 50
     steps:
       - uses: actions/checkout@v4
@@ -38,17 +38,17 @@ jobs:
 
       - name: Install Android SDK
         run: |
-          yes | sdkmanager 'platforms;android-35' 'build-tools;35.0.0' 'emulator' 'platform-tools' 'system-images;android-34;google_apis;x86_64'
+          yes | sdkmanager 'platforms;android-35' 'build-tools;35.0.0' 'emulator' 'platform-tools' 'system-images;android-30;default;x86_64'
 
       - name: Run UI smoke test on Android emulator
         uses: reactivecircus/android-emulator-runner@v2
         with:
-          api-level: 34
-          target: google_apis
+          api-level: 30
+          target: default
           arch: x86_64
           profile: pixel_2
-          emulator-boot-timeout: 900
-          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -memory 2048 -cores 2
+          emulator-boot-timeout: 600
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -memory 1536 -cores 2
           disable-animations: true
           script: gradle connectedDebugAndroidTest --stacktrace
 
