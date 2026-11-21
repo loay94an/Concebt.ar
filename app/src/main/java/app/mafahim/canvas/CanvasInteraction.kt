@@ -198,8 +198,10 @@ enum class MeasurementUnit(val millimetersPerUnit: Float, val symbol: String) {
 
 object CanvasMeasurement {
     fun distance(a: CanvasPoint, b: CanvasPoint, unit: MeasurementUnit, pixelsPerMillimeter: Float = 1f): Float {
+        val pixels = hypot(b.x - a.x, b.y - a.y)
+        if (unit == MeasurementUnit.PIXEL) return pixels
         val calibration = pixelsPerMillimeter.takeIf { it.isFinite() && it > 0f } ?: 1f
-        val millimeters = hypot(b.x - a.x, b.y - a.y) / calibration
+        val millimeters = pixels / calibration
         return millimeters / unit.millimetersPerUnit
     }
 
