@@ -52,4 +52,17 @@ class CanvasDocumentIntegrationTest {
         assertEquals(actual.pages.first().strokes, actual.strokes)
         repository.delete(id)
     }
+    @Test fun pdfExportWritesCompletePdfDocument() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val document = DrawingDocument.empty().copy(
+            strokes = listOf(DrawStroke("pdf-stroke", "layer-base", BrushTool.PEN, -1, 6f, 1f,
+                listOf(CanvasPoint(10f, 20f), CanvasPoint(90f, 120f))))
+        )
+        val uri = PdfExporter.export(context, document)
+        val bytes = context.contentResolver.openInputStream(uri)!!.use { it.readBytes() }
+        assertTrue(bytes.size > 500)
+        assertTrue(String(bytes.copyOfRange(0, 5), Charsets.US_ASCII).startsWith("%PDF"))
+        assertTrue(String(bytes.takeLast(20).toByteArray(), Charsets.US_ASCII).contains("%%EOF"))
+    }
+
 }
