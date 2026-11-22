@@ -46,6 +46,8 @@ const path = require('path');
  const drawX=view.x+view.width/2,drawY=view.y+view.height/2;
  await page.mouse.move(drawX,drawY); await page.mouse.down();
  await page.mouse.move(drawX+60,drawY+50,{steps:5}); await page.mouse.up();
+ const expanded=await page.evaluate(()=>{const c=document.querySelector('#board'),before=c.width;window.mafahimExpandWorld({x:c.width-80,y:c.height/2});return {before,after:c.width,paper:getComputedStyle(document.querySelector('.paper')).width}});
+ if(expanded.after<=expanded.before||parseFloat(expanded.paper)<=expanded.before) throw new Error('Canvas did not grow when drawing reached its edge: '+JSON.stringify(expanded));
 
  // Exercise real two-contact touch input through Chromium's DevTools protocol.
  const cdp=await page.context().newCDPSession(page);
