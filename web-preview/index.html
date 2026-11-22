@@ -13,7 +13,7 @@ button{font:inherit;color:inherit;border:1px solid var(--line);background:#24213
 @media(max-width:900px){.workspace{grid-template-columns:60px minmax(0,1fr)}.inspector{grid-column:1/-1;display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.inspector h3{grid-column:1/-1;margin-bottom:0}.section{border-top:0;padding:4px}.canvas-wrap{min-height:480px}.top{flex-wrap:wrap}.top-actions{width:100%}}
 @media(max-width:560px){.app{padding:9px;gap:9px}.top{border-radius:15px;padding:10px}.brand small{font-size:10px}.top-actions button{padding:7px 9px;font-size:11px}.workspace{grid-template-columns:48px minmax(0,1fr);gap:8px;min-height:0}.rail{padding:7px 4px;gap:7px}.tool{width:38px;height:40px;font-size:17px}.canvas-wrap{padding:10px;min-height:420px}.paper{min-height:400px}.inspector{grid-template-columns:1fr 1fr;padding:10px}.inspector h3{grid-column:1/-1}.bottom{font-size:10px}}
 </style></head>
-<body><main class="app">
+<body><input id="title" type="hidden" value="رسم جديد"><main class="app">
 <header class="top"><div class="logo"><svg viewBox="0 0 48 48" fill="none"><path d="M10 34 24 7l14 27M16 25h16M13 39h22" stroke="white" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><circle cx="24" cy="25" r="3" fill="#fff"/></svg></div><div class="brand"><strong>مفاهيم</strong><small>استوديو الرسم الإبداعي · معاينة الويب</small></div><nav class="top-actions"><button id="undo">↶ تراجع</button><button id="redo">↷ إعادة</button><button id="clear">مسح اللوحة</button><button id="export" class="active">تنزيل PNG ⇧</button></nav></header>
 <section class="workspace">
 <aside class="rail" aria-label="أدوات الرسم">
