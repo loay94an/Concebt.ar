@@ -7,7 +7,7 @@ const path = require('path');
  await page.goto('file://'+path.resolve('web-preview/index.html'));
  await page.waitForSelector('#board');
  await page.locator('#openBrushLibrary').click(); await page.waitForSelector('#brushLibrary.open');
- await page.locator('#brushLibrary [data-preset="pencil"]').click();
+ await page.locator('#brushLibrary [data-preset="pencil"]').first().click();
  await page.locator('#openPreferences').click(); await page.waitForSelector('#preferencesDialog.open');
  await page.locator('[data-pref="stylus"]').click(); await page.locator('[data-x="preferencesDialog"]').click();
  await page.locator('#openWorkspace').click(); await page.waitForSelector('#workspaceDrawer.open');
