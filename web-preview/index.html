@@ -307,37 +307,7 @@ function renderPref(tab){$$('[data-pref]').forEach(b=>b.classList.toggle('active
 $$('[data-pref]').forEach(b=>b.onclick=()=>renderPref(b.dataset.pref));
 $$('[data-format]').forEach(b=>b.onclick=()=>{currentFormat=b.dataset.format;$$('[data-format]').forEach(x=>x.classList.toggle('active',x===b))});
 function merged(){const source=$('#board'),c=document.createElement('canvas');c.width=source.width;c.height=source.height;const x=c.getContext('2d');if($('#whiteExport').checked){x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height)}x.drawImage(source,0,0);return c}
-$('#runExport').onclick=()=>{const c=merged(),name=($('#title').value||'mafahim').trim().replace(/[^\p{L}\p{N}_-]/gu,'_');if(currentFormat==='pdf'){const win=window.open('','_blank');if(!win){alert('اسمح بالنوافذ المنبثقة لحفظ PDF');return}win.document.write('<html><body style="margin:0"><img style="width:100%" src="'+c.toDataURL('image/png')+'">
-<style id="drawing-quality-fixes">
-/* Keep the color launcher in the toolbar, never on top of the drawing surface. */
-.stagebar #radialPicker{position:static!important;inset:auto!important;flex:0 0 32px!important;width:32px!important;height:32px!important;min-width:32px!important;margin-inline-start:8px!important;order:0!important;box-shadow:0 1px 4px #0002!important}
-.stagebar #radialPicker:before{inset:25%!important}
-.stagebar #radialPicker:after{left:42%!important;top:42%!important}
-.canvas-wrap>.radial-picker{display:none!important}
-#colorDialog .color-dialog{width:min(540px,94vw);max-height:min(88dvh,700px);overflow:auto}
-#colorDialog .wheel-stage canvas{width:min(100%,320px);max-height:52dvh;object-fit:contain}
-@media(max-width:600px){
- .stagebar #radialPicker{width:28px!important;height:28px!important;min-width:28px!important;flex-basis:28px!important;margin-inline-start:3px!important}
- #colorDialog .wheel-layout{grid-template-columns:minmax(0,1fr)!important}
- #colorDialog .wheel-stage canvas{width:min(76vw,280px);max-height:42dvh}
- #colorDialog .wheel-controls{display:grid;grid-template-columns:1fr 1fr;gap:8px}
- #colorDialog .wheel-preview,#colorDialog .primary{grid-column:1/-1}
-}
-</style>
-<script id="drawing-quality-fixes-script">
-(()=>{
- const picker=document.getElementById('radialPicker');
- const bar=document.querySelector('.stagebar');
- const dialog=document.getElementById('colorDialog');
- if(picker&&bar){bar.insertBefore(picker,document.getElementById('zoomLabel'));}
- if(picker){picker.setAttribute('aria-label','فتح عجلة الألوان');picker.title='فتح عجلة الألوان';}
- if(dialog){
-  dialog.addEventListener('click',e=>{if(e.target===dialog)dialog.classList.remove('open')});
-  document.addEventListener('keydown',e=>{if(e.key==='Escape')dialog.classList.remove('open')});
- }
-})();
-</script>
-</body></html>');win.document.close();win.onload=()=>win.print();close('exportDialog');return}let href,filename;if(currentFormat==='svg'){const svg='<svg xmlns="http://www.w3.org/2000/svg" width="'+c.width+'" height="'+c.height+'"><image href="'+c.toDataURL('image/png')+'" width="'+c.width+'" height="'+c.height+'"/></svg>';href=URL.createObjectURL(new Blob([svg],{type:'image/svg+xml'}));filename=name+'.svg'}else{href=c.toDataURL(currentFormat==='jpg'?'image/jpeg':'image/png',Number($('#jpgQuality').value)/100);filename=name+'.'+currentFormat}const a=document.createElement('a');a.href=href;a.download=filename;a.click();if(currentFormat==='svg')setTimeout(()=>URL.revokeObjectURL(href),1500);close('exportDialog')};
+$('#runExport').onclick=()=>{const c=merged(),name=($('#title').value||'mafahim').trim().replace(/[^\p{L}\p{N}_-]/gu,'_');if(currentFormat==='pdf'){const win=window.open('','_blank');if(!win){alert('اسمح بالنوافذ المنبثقة لحفظ PDF');return}win.document.write('<!doctype html><html><body style="margin:0"><img style="width:100%" src="'+c.toDataURL('image/png')+'"></body></html>');win.document.close();win.onload=()=>win.print();close('exportDialog');return}let href,filename;if(currentFormat==='svg'){const svg='<svg xmlns="http://www.w3.org/2000/svg" width="'+c.width+'" height="'+c.height+'"><image href="'+c.toDataURL('image/png')+'" width="'+c.width+'" height="'+c.height+'"/></svg>';href=URL.createObjectURL(new Blob([svg],{type:'image/svg+xml'}));filename=name+'.svg'}else{href=c.toDataURL(currentFormat==='jpg'?'image/jpeg':'image/png',Number($('#jpgQuality').value)/100);filename=name+'.'+currentFormat}const a=document.createElement('a');a.href=href;a.download=filename;a.click();if(currentFormat==='svg')setTimeout(()=>URL.revokeObjectURL(href),1500);close('exportDialog')};
 const key='mafahimProjects';
 function getProjects(){try{return JSON.parse(localStorage.getItem(key)||'[]')}catch(e){return []}}
 function renderProjects(){const root=$('#projectGrid');root.querySelectorAll('.saved-project').forEach(x=>x.remove());getProjects().forEach((p,i)=>{const card=document.createElement('div');card.className='project-card saved-project';const thumb=document.createElement('div');thumb.className='project-thumb';const im=document.createElement('img');im.src=p.image;im.style='width:100%;height:100%;object-fit:contain';thumb.append(im);const title=document.createElement('p');title.textContent=p.name+' · '+new Date(p.date).toLocaleDateString('ar');card.append(thumb,title);card.onclick=()=>{const img=new Image();img.onload=()=>{const c=$('#board');c.getContext('2d').clearRect(0,0,c.width,c.height);c.getContext('2d').drawImage(img,0,0,c.width,c.height);$('#title').value=p.name;close('projectsDialog')};img.src=p.image};root.append(card)})}
@@ -563,4 +533,28 @@ canvas.addEventListener('pointerup',e=>{if(window.mafahimState.tool==='text'){co
 .radial-picker span{display:none!important}
 @media(max-width:760px){.radial-picker{left:8px!important;bottom:8px!important;top:auto!important;width:56px!important;height:56px!important}}
 </style>
+
+<style id="drawing-quality-fixes">
+.stagebar #radialPicker{position:static!important;inset:auto!important;flex:0 0 32px!important;width:32px!important;height:32px!important;min-width:32px!important;margin-inline-start:8px!important;order:0!important;box-shadow:0 1px 4px #0002!important}
+.stagebar #radialPicker:before{inset:25%!important}
+.stagebar #radialPicker:after{left:42%!important;top:42%!important}
+.canvas-wrap>.radial-picker{display:none!important}
+#colorDialog .color-dialog{width:min(540px,94vw);max-height:min(88dvh,700px);overflow:auto}
+#colorDialog .wheel-stage canvas{width:min(100%,320px);max-height:52dvh;object-fit:contain}
+@media(max-width:600px){
+ .stagebar #radialPicker{width:28px!important;height:28px!important;min-width:28px!important;flex-basis:28px!important;margin-inline-start:3px!important}
+ #colorDialog .wheel-layout{grid-template-columns:minmax(0,1fr)!important}
+ #colorDialog .wheel-stage canvas{width:min(76vw,280px);max-height:42dvh}
+ #colorDialog .wheel-controls{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+ #colorDialog .wheel-preview,#colorDialog .primary{grid-column:1/-1}
+}
+</style>
+<script id="drawing-quality-fixes-script">
+(()=>{
+ const picker=document.getElementById('radialPicker'),bar=document.querySelector('.stagebar'),dialog=document.getElementById('colorDialog');
+ if(picker&&bar)bar.insertBefore(picker,document.getElementById('zoomLabel'));
+ if(picker){picker.setAttribute('aria-label','فتح عجلة الألوان');picker.title='فتح عجلة الألوان';}
+ if(dialog){dialog.addEventListener('click',e=>{if(e.target===dialog)dialog.classList.remove('open')});document.addEventListener('keydown',e=>{if(e.key==='Escape')dialog.classList.remove('open')});}
+})();
+</script>
 </body></html>
