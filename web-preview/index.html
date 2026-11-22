@@ -165,7 +165,7 @@ function renderPref(tab){$$('[data-pref]').forEach(b=>b.classList.toggle('active
 $$('[data-pref]').forEach(b=>b.onclick=()=>renderPref(b.dataset.pref));
 $$('[data-format]').forEach(b=>b.onclick=()=>{currentFormat=b.dataset.format;$$('[data-format]').forEach(x=>x.classList.toggle('active',x===b))});
 function merged(){const source=$('#board'),c=document.createElement('canvas');c.width=source.width;c.height=source.height;const x=c.getContext('2d');if($('#whiteExport').checked){x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height)}x.drawImage(source,0,0);return c}
-$('#runExport').onclick=()=>{const c=merged(),name=($('#title').value||'mafahim').trim().replace(/[^\p{L}\p{N}_-]/gu,'_');if(currentFormat==='pdf'){const win=window.open('','_blank');if(!win){alert('اسمح بالنوافذ المنبثقة لحفظ PDF');return}win.document.write('<html><body style="margin:0"><img style="width:100%" src="'+c.toDataURL('image/png')+'"><script>onload=()=>print()<\\/script>
+$('#runExport').onclick=()=>{const c=merged(),name=($('#title').value||'mafahim').trim().replace(/[^\p{L}\p{N}_-]/gu,'_');if(currentFormat==='pdf'){const win=window.open('','_blank');if(!win){alert('اسمح بالنوافذ المنبثقة لحفظ PDF');return}win.document.write('<html><body style="margin:0"><img style="width:100%" src="'+c.toDataURL('image/png')+'"><scr'+'ipt>onload=()=>print()<\\/script>
 <style>
 /* Multi-touch navigation: draw with one pointer; pan and pinch with two */
 .canvas-wrap{touch-action:none;overscroll-behavior:contain;user-select:none;-webkit-user-select:none}
