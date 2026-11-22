@@ -2,7 +2,7 @@ const { chromium } = require('playwright');
 const path = require('path');
 (async () => {
  const browser=await chromium.launch({headless:true});
- const page=await browser.newPage({viewport:{width:1440,height:1000}});
+ const page=await browser.newPage({viewport:{width:1440,height:1000},hasTouch:true,isMobile:true});
  const errors=[]; page.on('pageerror',e=>errors.push(e.message));
  await page.goto('file://'+path.resolve('web-preview/index.html'));
  await page.waitForSelector('#board');
