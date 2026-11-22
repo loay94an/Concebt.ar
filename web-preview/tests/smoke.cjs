@@ -49,7 +49,7 @@ const path = require('path');
 
  // Exercise real two-contact touch input through Chromium's DevTools protocol.
  const cdp=await page.context().newCDPSession(page);
- const centerX=box.x+box.width/2, centerY=box.y+box.height/2;
+ const centerX=view.x+view.width/2, centerY=view.y+view.height/2;
  const before=await page.locator('.paper').evaluate(el=>el.style.transform);
  await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[
   {x:centerX-35,y:centerY-20,id:1},{x:centerX+35,y:centerY+20,id:2}
