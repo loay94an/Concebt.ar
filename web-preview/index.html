@@ -189,7 +189,7 @@ $('#snapToggle').onclick=e=>e.currentTarget.classList.toggle('active');
 $('#guideToggle').onclick=e=>e.currentTarget.classList.toggle('active');
 $('#arcToggle').onclick=e=>e.currentTarget.classList.toggle('active');
 $('#colors').onclick=e=>{if(e.target.classList.contains('swatch')&&e.detail===2){$('#customColor').value=color;open('colorDialog')}};
-$('#applyColor').onclick=()=>{color=$('#customColor').value;$('#radialPicker').style.setProperty('--active-color',color);$('.swatch').forEach(b=>b.classList.toggle('active',b.title===color));close('colorDialog')};
+$('#applyColor').onclick=()=>{color=$('#customColor').value;$('#radialPicker').style.setProperty('--active-color',color);$$('.swatch').forEach(b=>b.classList.toggle('active',b.title===color));close('colorDialog')};
 $('#opacityControl').oninput=e=>{window.mafahimOpacity=Number(e.target.value)/100};
 canvas.addEventListener('pointerup',e=>{if(window.mafahimState.tool==='text'){const p=pos(e),value=prompt('اكتب النص الذي تريد إضافته:');if(value){ctx.save();ctx.globalAlpha=1;ctx.fillStyle=color;ctx.font=(width*5)+'px sans-serif';ctx.fillText(value,p.x,p.y);ctx.restore();snapshot()}}});
 
