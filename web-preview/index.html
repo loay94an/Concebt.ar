@@ -45,6 +45,7 @@ document.getElementById('zoomIn').onclick=()=>setZoom(zoom+10);document.getEleme
 document.getElementById('addLayer').onclick=()=>{layers++;const x=document.createElement('div');x.className='layer';x.innerHTML='<span>◉ الطبقة '+(layers===2?'الثانية':layers)+'</span><span>⋮</span>';document.querySelectorAll('.section')[2].insertBefore(x,document.getElementById('addLayer'))};
 document.getElementById('addPage').onclick=()=>{pages++;const x=document.createElement('div');x.className='layer';x.innerHTML='<span>▧ الصفحة '+pages+'</span><span>نشطة</span>';document.querySelectorAll('.section')[3].insertBefore(x,document.getElementById('addPage'))};
 document.getElementById('imageBtn').onclick=()=>document.getElementById('imageInput').click();document.getElementById('imageInput').onchange=e=>{const f=e.target.files[0];if(!f)return;const im=new Image();im.onload=()=>{snapshot();const scale=Math.min(700/im.width,600/im.height,1);ctx.drawImage(im,80,80,im.width*scale,im.height*scale);URL.revokeObjectURL(im.src)};im.src=URL.createObjectURL(f)};
+window.mafahimState={get tool(){return tool},canvas,ctx,pos};
 </script>
 <style>
 /* Concepts-inspired studio expansion */
@@ -75,7 +76,8 @@ document.getElementById('imageBtn').onclick=()=>document.getElementById('imageIn
 
 <script>
 (()=>{
-const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+const $=s=>document.querySelector(s),$=s=>[...document.querySelectorAll(s)];
+const canvas=$('#board'),ctx=canvas.getContext('2d'),pos=e=>{const r=canvas.getBoundingClientRect();return{x:(e.clientX-r.left)*canvas.width/r.width,y:(e.clientY-r.top)*canvas.height/r.height}};
 const open=id=>$('#'+id).classList.add('open'),close=id=>$('#'+id).classList.remove('open');
 $$('[data-x]').forEach(b=>b.onclick=()=>close(b.dataset.x));
 const head=$('.top-actions');
@@ -123,7 +125,7 @@ $('#arcToggle').onclick=e=>e.currentTarget.classList.toggle('active');
 $('#colors').onclick=e=>{if(e.target.classList.contains('swatch')&&e.detail===2){$('#customColor').value=color;open('colorDialog')}};
 $('#applyColor').onclick=()=>{color=$('#customColor').value;$('.swatch').forEach(b=>b.classList.remove('active'));close('colorDialog')};
 $('#opacityControl').oninput=e=>{window.mafahimOpacity=Number(e.target.value)/100};
-canvas.addEventListener('pointerup',e=>{if(tool==='text'){const p=pos(e),value=prompt('اكتب النص الذي تريد إضافته:');if(value){ctx.save();ctx.globalAlpha=1;ctx.fillStyle=color;ctx.font=(width*5)+'px sans-serif';ctx.fillText(value,p.x,p.y);ctx.restore();snapshot()}}});
+canvas.addEventListener('pointerup',e=>{if(window.mafahimState.tool==='text'){const p=pos(e),value=prompt('اكتب النص الذي تريد إضافته:');if(value){ctx.save();ctx.globalAlpha=1;ctx.fillStyle=color;ctx.font=(width*5)+'px sans-serif';ctx.fillText(value,p.x,p.y);ctx.restore();snapshot()}}});
 
 })();
 </script>
