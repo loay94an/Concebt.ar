@@ -293,14 +293,6 @@ $$('[data-pref]').forEach(b=>b.onclick=()=>renderPref(b.dataset.pref));
 $$('[data-format]').forEach(b=>b.onclick=()=>{currentFormat=b.dataset.format;$$('[data-format]').forEach(x=>x.classList.toggle('active',x===b))});
 function merged(){const source=$('#board'),c=document.createElement('canvas');c.width=source.width;c.height=source.height;const x=c.getContext('2d');if($('#whiteExport').checked){x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height)}x.drawImage(source,0,0);return c}
 $('#runExport').onclick=()=>{const c=merged(),name=($('#title').value||'mafahim').trim().replace(/[^\p{L}\p{N}_-]/gu,'_');if(currentFormat==='pdf'){const win=window.open('','_blank');if(!win){alert('اسمح بالنوافذ المنبثقة لحفظ PDF');return}win.document.write('<html><body style="margin:0"><img style="width:100%" src="'+c.toDataURL('image/png')+'"><style>
-/* Infinite-world drawing surface: viewport is the window, not a paper sheet. */
-.workspace{background:#f2f2ef!important}
-.stage{background:#f2f2ef!important}
-.canvas-wrap{position:relative!important;display:flex!important;align-items:center!important;justify-content:center!important;padding:0!important;overflow:hidden!important;background-color:#f2f2ef!important;background-image:radial-gradient(#c9c9c3 1px,transparent 1px)!important;background-size:24px 24px!important}
-.paper{flex:0 0 auto!important;width:4096px!important;height:4096px!important;max-width:none!important;min-width:4096px!important;min-height:4096px!important;aspect-ratio:auto!important;background:transparent!important;border:0!important;border-radius:0!important;box-shadow:none!important;overflow:visible!important;transform-origin:center center!important}
-#board{display:block!important;width:4096px!important;height:4096px!important;max-width:none!important;background:transparent!important;touch-action:none!important}
-@media(max-width:760px){.canvas-wrap{padding:0!important}.paper{width:4096px!important;height:4096px!important;max-width:none!important;min-width:4096px!important;min-height:4096px!important}.radial-picker{z-index:12}}
-@media(min-width:761px){.canvas-wrap{justify-content:center!important}.paper{width:4096px!important;height:4096px!important}}
 </style>\n</body></html>');win.document.close();win.onload=()=>win.print();close('exportDialog');return}let href,filename;if(currentFormat==='svg'){const svg='<svg xmlns="http://www.w3.org/2000/svg" width="'+c.width+'" height="'+c.height+'"><image href="'+c.toDataURL('image/png')+'" width="'+c.width+'" height="'+c.height+'"/></svg>';href=URL.createObjectURL(new Blob([svg],{type:'image/svg+xml'}));filename=name+'.svg'}else{href=c.toDataURL(currentFormat==='jpg'?'image/jpeg':'image/png',Number($('#jpgQuality').value)/100);filename=name+'.'+currentFormat}const a=document.createElement('a');a.href=href;a.download=filename;a.click();if(currentFormat==='svg')setTimeout(()=>URL.revokeObjectURL(href),1500);close('exportDialog')};
 const key='mafahimProjects';
 function getProjects(){try{return JSON.parse(localStorage.getItem(key)||'[]')}catch(e){return []}}
@@ -507,4 +499,13 @@ canvas.addEventListener('pointerup',e=>{if(window.mafahimState.tool==='text'){co
  paintWheel();
 })();
 </script>
+<style>/* Infinite-world drawing surface: viewport is the window, not a paper sheet. */
+.workspace{background:#f2f2ef!important}
+.stage{background:#f2f2ef!important}
+.canvas-wrap{position:relative!important;display:flex!important;align-items:center!important;justify-content:center!important;padding:0!important;overflow:hidden!important;background-color:#f2f2ef!important;background-image:radial-gradient(#c9c9c3 1px,transparent 1px)!important;background-size:24px 24px!important}
+.paper{flex:0 0 auto!important;width:4096px!important;height:4096px!important;max-width:none!important;min-width:4096px!important;min-height:4096px!important;aspect-ratio:auto!important;background:transparent!important;border:0!important;border-radius:0!important;box-shadow:none!important;overflow:visible!important;transform-origin:center center!important}
+#board{display:block!important;width:4096px!important;height:4096px!important;max-width:none!important;background:transparent!important;touch-action:none!important}
+@media(max-width:760px){.canvas-wrap{padding:0!important}.paper{width:4096px!important;height:4096px!important;max-width:none!important;min-width:4096px!important;min-height:4096px!important}.radial-picker{z-index:12}}
+@media(min-width:761px){.canvas-wrap{justify-content:center!important}.paper{width:4096px!important;height:4096px!important}}
+</style>
 </body></html>
