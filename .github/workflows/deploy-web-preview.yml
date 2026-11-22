@@ -1,7 +1,7 @@
-name: Deploy Mafahim web preview
+name: Deploy Mafahim web studio
 on:
   push:
-    branches: [web-preview]
+    branches: [main]
     paths:
       - 'web-preview/**'
       - '.github/workflows/deploy-web-preview.yml'
@@ -11,25 +11,35 @@ permissions:
   pages: write
   id-token: write
 concurrency:
-  group: pages
+  group: github-pages
   cancel-in-progress: true
 jobs:
-  deploy:
+  validate-and-deploy:
+    runs-on: ubuntu-latest
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Configure Pages
-        uses: actions/configure-pages@v5
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
-          enablement: true
-      - name: Upload site
+          node-version: 22
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - name: Validate HTML and inline JavaScript
+        run: python web-preview/tests/validate.py
+      - name: Install Playwright
+        run: npm install --no-save playwright
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Run browser smoke tests
+        run: node web-preview/tests/smoke.cjs
+      - uses: actions/configure-pages@v5
+      - name: Upload web studio
         uses: actions/upload-pages-artifact@v3
         with:
           path: web-preview
-      - name: Deploy
+      - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
