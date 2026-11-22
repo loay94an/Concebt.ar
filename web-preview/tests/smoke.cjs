@@ -32,7 +32,7 @@ const path = require('path');
  await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
  const after=await page.locator('.paper').evaluate(el=>el.style.transform);
  const zoom=await page.locator('#zoomLabel').textContent();
- if(before===after || !/translate\\(/.test(after) || !/scale\\((?!1(?:\\.0*)?\\))/.test(after))
+ if(before===after || !/translate\(/.test(after) || !/scale\((?!1(?:\.0*)?\))/.test(after))
   throw new Error('Two-finger pinch did not change canvas transform: '+after);
  if(!zoom || zoom.trim()==='100%') throw new Error('Zoom indicator did not update: '+zoom);
  if(errors.length) throw new Error('Browser errors: '+errors.join(' | '));
