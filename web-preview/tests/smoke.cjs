@@ -54,7 +54,7 @@ const path = require('path');
  // Exercise the same touch-pointer sequence handled by the multi-touch controller.
  const centerX=view.x+view.width/2, centerY=view.y+view.height/2;
  const before=await page.locator('.paper').evaluate(el=>el.style.transform);
- await page.locator('.canvas-wrap').evaluate(el=>{
+ await page.locator('.canvas-wrap').evaluate((el,{centerX,centerY})=>{
   const send=(type,id,x,y)=>el.dispatchEvent(new PointerEvent(type,{pointerId:id,pointerType:'touch',clientX:x,clientY:y,bubbles:true,cancelable:true}));
   send('pointerdown',11,centerX-35,centerY-20);
   send('pointerdown',12,centerX+35,centerY+20);
@@ -62,7 +62,7 @@ const path = require('path');
   send('pointermove',12,centerX+75,centerY+35);
   send('pointerup',11,centerX-75,centerY-35);
   send('pointerup',12,centerX+75,centerY+35);
- }); 
+ },{centerX,centerY});
  const after=await page.locator('.paper').evaluate(el=>el.style.transform);
  const zoom=await page.locator('#zoomLabel').textContent();
  if(before===after || !/translate\(/.test(after) || !/scale\((?!1(?:\.0*)?\))/.test(after))
