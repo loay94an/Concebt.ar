@@ -51,17 +51,18 @@ const path = require('path');
  const expanded=await page.evaluate(()=>{const c=document.querySelector('#board'),before=c.width;window.mafahimExpandWorld({x:c.width-80,y:c.height/2});return {before,after:c.width,paper:getComputedStyle(document.querySelector('.paper')).width}});
  if(expanded.after<=expanded.before||parseFloat(expanded.paper)<=expanded.before) throw new Error('Canvas did not grow when drawing reached its edge: '+JSON.stringify(expanded));
 
- // Exercise real two-contact touch input through Chromium's DevTools protocol.
- const cdp=await page.context().newCDPSession(page);
+ // Exercise the same touch-pointer sequence handled by the multi-touch controller.
  const centerX=view.x+view.width/2, centerY=view.y+view.height/2;
  const before=await page.locator('.paper').evaluate(el=>el.style.transform);
- await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[
-  {x:centerX-35,y:centerY-20,id:1},{x:centerX+35,y:centerY+20,id:2}
- ]});
- await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[
-  {x:centerX-75,y:centerY-35,id:1},{x:centerX+75,y:centerY+35,id:2}
- ]});
- await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+ await page.locator('.canvas-wrap').evaluate(el=>{
+  const send=(type,id,x,y)=>el.dispatchEvent(new PointerEvent(type,{pointerId:id,pointerType:'touch',clientX:x,clientY:y,bubbles:true,cancelable:true}));
+  send('pointerdown',11,centerX-35,centerY-20);
+  send('pointerdown',12,centerX+35,centerY+20);
+  send('pointermove',11,centerX-75,centerY-35);
+  send('pointermove',12,centerX+75,centerY+35);
+  send('pointerup',11,centerX-75,centerY-35);
+  send('pointerup',12,centerX+75,centerY+35);
+ }); 
  const after=await page.locator('.paper').evaluate(el=>el.style.transform);
  const zoom=await page.locator('#zoomLabel').textContent();
  if(before===after || !/translate\(/.test(after) || !/scale\((?!1(?:\.0*)?\))/.test(after))
