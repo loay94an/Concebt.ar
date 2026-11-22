@@ -1,0 +1,24 @@
+const { chromium } = require('playwright');
+const path = require('path');
+(async () => {
+ const browser=await chromium.launch({headless:true});
+ const page=await browser.newPage({viewport:{width:1440,height:1000}});
+ const errors=[]; page.on('pageerror',e=>errors.push(e.message));
+ await page.goto('file://'+path.resolve('web-preview/index.html'));
+ await page.waitForSelector('#board');
+ await page.locator('#openBrushLibrary').click(); await page.waitForSelector('#brushLibrary.open');
+ await page.locator('#brushLibrary [data-preset="pencil"]').click();
+ await page.locator('#openPreferences').click(); await page.waitForSelector('#preferencesDialog.open');
+ await page.locator('[data-pref="stylus"]').click(); await page.locator('[data-x="preferencesDialog"]').click();
+ await page.locator('#openWorkspace').click(); await page.waitForSelector('#workspaceDrawer.open');
+ await page.locator('[data-grid="dots"]').click(); await page.locator('[data-x="workspaceDrawer"]').click();
+ await page.locator('#export').click(); await page.waitForSelector('#exportDialog.open');
+ await page.locator('[data-format="jpg"]').click(); await page.locator('[data-x="exportDialog"]').click();
+ await page.locator('#board').scrollIntoViewIfNeeded();
+ const box=await page.locator('#board').boundingBox();
+ await page.mouse.move(box.x+100,box.y+100); await page.mouse.down();
+ await page.mouse.move(box.x+160,box.y+150,{steps:5}); await page.mouse.up();
+ if(errors.length) throw new Error('Browser errors: '+errors.join(' | '));
+ console.log('PASS: app, brush library, preferences, workspace, grid, export and drawing interactions.');
+ await browser.close();
+})().catch(e=>{console.error(e);process.exit(1)});
