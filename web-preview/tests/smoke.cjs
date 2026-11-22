@@ -14,6 +14,8 @@ const path = require('path');
  await page.locator('#brushLibrary [data-preset="pencil"]').first().click();
  const overlayBefore=await page.locator('#colorDialog').evaluate(el=>getComputedStyle(el).display);
  if(overlayBefore!=='none') throw new Error('Color dialog is visible before opening: '+overlayBefore);
+ const wheelLauncher=await page.locator('#radialPicker').evaluate(el=>({parent:el.parentElement.className,position:getComputedStyle(el).position}));
+ if(!wheelLauncher.parent.includes('stagebar')||wheelLauncher.position==='absolute') throw new Error('Color wheel launcher must live in the toolbar, outside the drawing area: '+JSON.stringify(wheelLauncher));
  await page.locator('#radialPicker').click(); await page.waitForSelector('#colorDialog.open');
  if(!(await page.locator('#colorWheel').count())) throw new Error('Interactive radial color wheel is missing');
  const wheelBox=await page.locator('#colorWheel').boundingBox();
