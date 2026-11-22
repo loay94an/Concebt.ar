@@ -2,7 +2,7 @@ const { chromium } = require('playwright');
 const path = require('path');
 (async () => {
  const browser=await chromium.launch({headless:true});
- const page=await browser.newPage({viewport:{width:1440,height:1000}});
+ const page=await browser.newPage({viewport:{width:1440,height:1000},hasTouch:true,isMobile:true});
  const errors=[]; page.on('pageerror',e=>errors.push(e.message));
  await page.goto('file://'+path.resolve('web-preview/index.html'));
  await page.waitForSelector('#board');
@@ -14,6 +14,8 @@ const path = require('path');
  await page.locator('#brushLibrary [data-preset="pencil"]').first().click();
  const overlayBefore=await page.locator('#colorDialog').evaluate(el=>getComputedStyle(el).display);
  if(overlayBefore!=='none') throw new Error('Color dialog is visible before opening: '+overlayBefore);
+ const wheelLauncher=await page.locator('#radialPicker').evaluate(el=>({parent:el.parentElement.className,position:getComputedStyle(el).position}));
+ if(!wheelLauncher.parent.includes('stagebar')||wheelLauncher.position==='absolute') throw new Error('Color wheel launcher must live in the toolbar, outside the drawing area: '+JSON.stringify(wheelLauncher));
  await page.locator('#radialPicker').click(); await page.waitForSelector('#colorDialog.open');
  if(!(await page.locator('#colorWheel').count())) throw new Error('Interactive radial color wheel is missing');
  const wheelBox=await page.locator('#colorWheel').boundingBox();
@@ -49,17 +51,18 @@ const path = require('path');
  const expanded=await page.evaluate(()=>{const c=document.querySelector('#board'),before=c.width;window.mafahimExpandWorld({x:c.width-80,y:c.height/2});return {before,after:c.width,paper:getComputedStyle(document.querySelector('.paper')).width}});
  if(expanded.after<=expanded.before||parseFloat(expanded.paper)<=expanded.before) throw new Error('Canvas did not grow when drawing reached its edge: '+JSON.stringify(expanded));
 
- // Exercise real two-contact touch input through Chromium's DevTools protocol.
- const cdp=await page.context().newCDPSession(page);
+ // Exercise the same touch-pointer sequence handled by the multi-touch controller.
  const centerX=view.x+view.width/2, centerY=view.y+view.height/2;
  const before=await page.locator('.paper').evaluate(el=>el.style.transform);
- await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[
-  {x:centerX-35,y:centerY-20,id:1},{x:centerX+35,y:centerY+20,id:2}
- ]});
- await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[
-  {x:centerX-75,y:centerY-35,id:1},{x:centerX+75,y:centerY+35,id:2}
- ]});
- await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+ await page.locator('.canvas-wrap').evaluate((el,{centerX,centerY})=>{
+  const send=(type,id,x,y)=>el.dispatchEvent(new PointerEvent(type,{pointerId:id,pointerType:'touch',clientX:x,clientY:y,bubbles:true,cancelable:true}));
+  send('pointerdown',11,centerX-35,centerY-20);
+  send('pointerdown',12,centerX+35,centerY+20);
+  send('pointermove',11,centerX-75,centerY-35);
+  send('pointermove',12,centerX+75,centerY+35);
+  send('pointerup',11,centerX-75,centerY-35);
+  send('pointerup',12,centerX+75,centerY+35);
+ },{centerX,centerY});
  const after=await page.locator('.paper').evaluate(el=>el.style.transform);
  const zoom=await page.locator('#zoomLabel').textContent();
  if(before===after || !/translate\(/.test(after) || !/scale\((?!1(?:\.0*)?\))/.test(after))
