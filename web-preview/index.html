@@ -199,7 +199,7 @@ const colorBox=document.getElementById('colors');colors.forEach(c=>{const b=docu
 document.querySelectorAll('[data-tool]').forEach(b=>b.onclick=()=>{tool=b.dataset.tool;document.querySelectorAll('[data-tool]').forEach(x=>x.classList.toggle('active',x===b))});
 document.getElementById('width').oninput=e=>{width=+e.target.value;document.getElementById('widthLabel').textContent=width};
 function pos(e){const r=canvas.getBoundingClientRect();return{x:(e.clientX-r.left)*canvas.width/r.width,y:(e.clientY-r.top)*canvas.height/r.height}}
-canvas.addEventListener('pointerdown',e=>{if(tool==='hand')return;canvas.setPointerCapture(e.pointerId);snapshot();drawing=true;start=pos(e);calligraphyLast=start;ctx.beginPath();ctx.moveTo(start.x,start.y);ctx.lineCap='round';ctx.lineJoin='round';ctx.lineWidth=tool==='eraser'?width*5:width;ctx.strokeStyle=tool==='eraser'?'#fff':color;ctx.globalAlpha=tool==='marker'?.28:1});
+canvas.addEventListener('pointerdown',e=>{if(tool==='hand')return;canvas.setPointerCapture(e.pointerId);snapshot();drawing=true;start=pos(e);calligraphyLast=start;ctx.beginPath();ctx.moveTo(start.x,start.y);ctx.lineCap='round';ctx.lineJoin='round';ctx.lineWidth=tool==='eraser'?width*5:width;ctx.strokeStyle=tool==='eraser'?'#fff':color;ctx.globalAlpha=(tool==='marker'?.28:1)*(window.mafahimOpacity??1)});
 canvas.addEventListener('pointermove',e=>{if(!drawing)return;const p=pos(e);if(['pen','pencil','marker','eraser'].includes(tool)){ctx.lineTo(p.x,p.y);ctx.stroke()}else if(tool==='calligraphy'&&calligraphyLast){const a=(Number(document.getElementById('calligraphyAngle')?.value||45))*Math.PI/180,dx=Math.cos(a)*width*.5,dy=Math.sin(a)*width*.5;ctx.save();ctx.globalAlpha=1;ctx.fillStyle=color;ctx.beginPath();ctx.moveTo(calligraphyLast.x-dx,calligraphyLast.y-dy);ctx.lineTo(p.x-dx,p.y-dy);ctx.lineTo(p.x+dx,p.y+dy);ctx.lineTo(calligraphyLast.x+dx,calligraphyLast.y+dy);ctx.closePath();ctx.fill();ctx.restore();calligraphyLast=p}});
 function finish(e){if(!drawing)return;drawing=false;calligraphyLast=null;const p=pos(e);ctx.globalAlpha=1;if(['line','rect','ellipse'].includes(tool)){ctx.strokeStyle=color;ctx.lineWidth=width;ctx.beginPath();if(tool==='line'){ctx.moveTo(start.x,start.y);ctx.lineTo(p.x,p.y)}else if(tool==='rect'){ctx.rect(start.x,start.y,p.x-start.x,p.y-start.y)}else ctx.ellipse((start.x+p.x)/2,(start.y+p.y)/2,Math.abs(p.x-start.x)/2,Math.abs(p.y-start.y)/2,0,0,Math.PI*2);ctx.stroke()}ctx.globalAlpha=1;ctx.beginPath()}
 canvas.addEventListener('pointerup',finish);canvas.addEventListener('pointercancel',finish);
@@ -369,13 +369,19 @@ canvas.addEventListener('pointerup',e=>{if(window.mafahimState.tool==='text'){co
     const pts=[...pointers.values()];
     if(pts.length>=2){
       const a=pts[0],b=pts[1],mid=midpoint(a,b);
-      gesture={distance:Math.max(1,distance(a,b)),scale,offsetX,offsetY,mid};
+      gesture={mode:'pinch',distance:Math.max(1,distance(a,b)),scale,offsetX,offsetY,mid};
+    }else if(pts.length===1&&window.mafahimState?.tool==='hand'){
+      gesture={mode:'pan',start:pts[0],offsetX,offsetY};
     }else gesture=null;
   }
 
   viewport.addEventListener('pointerdown',e=>{
-    if(e.pointerType!=='touch')return;
+    if(e.pointerType!=='touch'&&window.mafahimState?.tool!=='hand')return;
     pointers.set(e.pointerId,point(e));
+    if(pointers.size===1&&window.mafahimState?.tool==='hand'){
+      gesture={mode:'pan',start:point(e),offsetX,offsetY};
+      e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();
+    }
     if(pointers.size>=2){
       e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();
       if(typeof drawing!=='undefined'&&drawing){
@@ -387,9 +393,16 @@ canvas.addEventListener('pointerup',e=>{if(window.mafahimState.tool==='text'){co
   },true);
 
   viewport.addEventListener('pointermove',e=>{
-    if(e.pointerType!=='touch'||!pointers.has(e.pointerId))return;
+    if(!pointers.has(e.pointerId))return;
     pointers.set(e.pointerId,point(e));
-    if(pointers.size>=2&&gesture){
+    if(pointers.size===1&&gesture?.mode==='pan'){
+      e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();
+      const p=point(e);
+      offsetX=gesture.offsetX+p.x-gesture.start.x;
+      offsetY=gesture.offsetY+p.y-gesture.start.y;
+      render();return;
+    }
+    if(pointers.size>=2&&gesture?.mode==='pinch'){
       e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();
       const pts=[...pointers.values()],mid=midpoint(pts[0],pts[1]);
       const nextDistance=Math.max(1,distance(pts[0],pts[1]));
@@ -407,7 +420,7 @@ canvas.addEventListener('pointerup',e=>{if(window.mafahimState.tool==='text'){co
   },true);
 
   function release(e){
-    if(e.pointerType!=='touch')return;
+    if(!pointers.has(e.pointerId))return;
     const wasGesture=pointers.size>=2||gesture?.mode==='pan';
     pointers.delete(e.pointerId);
     if(wasGesture){e.preventDefault();e.stopPropagation();e.stopImmediatePropagation()}
