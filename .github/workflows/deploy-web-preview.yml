@@ -5,6 +5,11 @@ on:
     paths:
       - 'web-preview/**'
       - '.github/workflows/deploy-web-preview.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'web-preview/**'
+      - '.github/workflows/deploy-web-preview.yml'
   workflow_dispatch:
 permissions:
   contents: read
@@ -36,10 +41,13 @@ jobs:
       - name: Run browser smoke tests
         run: node web-preview/tests/smoke.cjs
       - uses: actions/configure-pages@v5
+        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
       - name: Upload web studio
+        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
         uses: actions/upload-pages-artifact@v3
         with:
           path: web-preview
       - name: Deploy to GitHub Pages
+        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
         id: deployment
         uses: actions/deploy-pages@v4
