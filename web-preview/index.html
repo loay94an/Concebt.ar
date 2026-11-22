@@ -190,7 +190,7 @@ canvas{width:100%;height:100%;background:#fff}
 </section><footer class="bottom"><span>مفاهيم · استوديو الرسم</span><span>Grid <button id="gridToggle">شبكة</button> <button id="snapToggle">Snap</button> <button id="guideToggle">Guide</button> <button id="arcToggle">Arc</button> <button id="importMenu">استيراد</button> <button id="shareProject">مشاركة</button></span></footer>
 </main>
 <script>
-const canvas=document.getElementById('board'),ctx=canvas.getContext('2d');let tool='pen',color='#24212e',width=6,drawing=false,start=null,zoom=100,history=[],redoStack=[],pages=1,layers=1;
+const canvas=document.getElementById('board'),ctx=canvas.getContext('2d');let tool='pen',color='#24212e',width=6,drawing=false,start=null,calligraphyLast=null,zoom=100,history=[],redoStack=[],pages=1,layers=1;
 const colors=['#24212e','#8b5cf6','#ec4899','#06b6d4','#10b981','#f59e0b','#ef4444','#3b82f6','#111827','#ffffff'];
 function snapshot(){history.push(canvas.toDataURL());if(history.length>40)history.shift();redoStack=[]}
 function restore(url){const im=new Image();im.onload=()=>{ctx.clearRect(0,0,canvas.width,canvas.height);ctx.drawImage(im,0,0)};im.src=url}
@@ -199,9 +199,9 @@ const colorBox=document.getElementById('colors');colors.forEach(c=>{const b=docu
 document.querySelectorAll('[data-tool]').forEach(b=>b.onclick=()=>{tool=b.dataset.tool;document.querySelectorAll('[data-tool]').forEach(x=>x.classList.toggle('active',x===b))});
 document.getElementById('width').oninput=e=>{width=+e.target.value;document.getElementById('widthLabel').textContent=width};
 function pos(e){const r=canvas.getBoundingClientRect();return{x:(e.clientX-r.left)*canvas.width/r.width,y:(e.clientY-r.top)*canvas.height/r.height}}
-canvas.addEventListener('pointerdown',e=>{if(tool==='hand')return;canvas.setPointerCapture(e.pointerId);snapshot();drawing=true;start=pos(e);ctx.beginPath();ctx.moveTo(start.x,start.y);ctx.lineCap='round';ctx.lineJoin='round';ctx.lineWidth=tool==='eraser'?width*5:width;ctx.strokeStyle=tool==='eraser'?'#fff':color;ctx.globalAlpha=tool==='marker'?.28:1});
-canvas.addEventListener('pointermove',e=>{if(!drawing)return;const p=pos(e);if(['pen','pencil','marker','eraser'].includes(tool)){ctx.lineTo(p.x,p.y);ctx.stroke()}});
-function finish(e){if(!drawing)return;drawing=false;const p=pos(e);ctx.globalAlpha=1;if(['line','rect','ellipse'].includes(tool)){ctx.strokeStyle=color;ctx.lineWidth=width;ctx.beginPath();if(tool==='line'){ctx.moveTo(start.x,start.y);ctx.lineTo(p.x,p.y)}else if(tool==='rect'){ctx.rect(start.x,start.y,p.x-start.x,p.y-start.y)}else ctx.ellipse((start.x+p.x)/2,(start.y+p.y)/2,Math.abs(p.x-start.x)/2,Math.abs(p.y-start.y)/2,0,0,Math.PI*2);ctx.stroke()}ctx.globalAlpha=1;ctx.beginPath()}
+canvas.addEventListener('pointerdown',e=>{if(tool==='hand')return;canvas.setPointerCapture(e.pointerId);snapshot();drawing=true;start=pos(e);calligraphyLast=start;ctx.beginPath();ctx.moveTo(start.x,start.y);ctx.lineCap='round';ctx.lineJoin='round';ctx.lineWidth=tool==='eraser'?width*5:width;ctx.strokeStyle=tool==='eraser'?'#fff':color;ctx.globalAlpha=tool==='marker'?.28:1});
+canvas.addEventListener('pointermove',e=>{if(!drawing)return;const p=pos(e);if(['pen','pencil','marker','eraser'].includes(tool)){ctx.lineTo(p.x,p.y);ctx.stroke()}else if(tool==='calligraphy'&&calligraphyLast){const a=(Number(document.getElementById('calligraphyAngle')?.value||45))*Math.PI/180,dx=Math.cos(a)*width*.5,dy=Math.sin(a)*width*.5;ctx.save();ctx.globalAlpha=1;ctx.fillStyle=color;ctx.beginPath();ctx.moveTo(calligraphyLast.x-dx,calligraphyLast.y-dy);ctx.lineTo(p.x-dx,p.y-dy);ctx.lineTo(p.x+dx,p.y+dy);ctx.lineTo(calligraphyLast.x+dx,calligraphyLast.y+dy);ctx.closePath();ctx.fill();ctx.restore();calligraphyLast=p}});
+function finish(e){if(!drawing)return;drawing=false;calligraphyLast=null;const p=pos(e);ctx.globalAlpha=1;if(['line','rect','ellipse'].includes(tool)){ctx.strokeStyle=color;ctx.lineWidth=width;ctx.beginPath();if(tool==='line'){ctx.moveTo(start.x,start.y);ctx.lineTo(p.x,p.y)}else if(tool==='rect'){ctx.rect(start.x,start.y,p.x-start.x,p.y-start.y)}else ctx.ellipse((start.x+p.x)/2,(start.y+p.y)/2,Math.abs(p.x-start.x)/2,Math.abs(p.y-start.y)/2,0,0,Math.PI*2);ctx.stroke()}ctx.globalAlpha=1;ctx.beginPath()}
 canvas.addEventListener('pointerup',finish);canvas.addEventListener('pointercancel',finish);
 document.getElementById('undo').onclick=()=>{if(history.length>1){redoStack.push(canvas.toDataURL());history.pop();restore(history[history.length-1])}};
 document.getElementById('redo').onclick=()=>{if(redoStack.length){const s=redoStack.pop();history.push(s);restore(s)}};
@@ -311,7 +311,8 @@ $('#snapToggle').onclick=e=>e.currentTarget.classList.toggle('active');
 $('#guideToggle').onclick=e=>e.currentTarget.classList.toggle('active');
 $('#arcToggle').onclick=e=>e.currentTarget.classList.toggle('active');
 $('#colors').onclick=e=>{if(e.target.classList.contains('swatch')&&e.detail===2){$('#customColor').value=color;open('colorDialog')}};
-$('#applyColor').onclick=()=>{color=$('#customColor').value;$('#radialPicker').style.setProperty('--active-color',color);$$('.swatch').forEach(b=>b.classList.toggle('active',b.title===color));close('colorDialog')};
+$('#applyColor').onclick=()=>{color=$('#customColor').value;$('#radialPicker').style.setProperty('--active-color',color);$('.swatch').forEach(b=>b.classList.toggle('active',b.title===color));close('colorDialog')};
+document.addEventListener('mafahim-color-change',e=>{if(e.detail&&e.detail.color){color=e.detail.color;$('#radialPicker').style.setProperty('--active-color',color)}});
 $('#opacityControl').oninput=e=>{window.mafahimOpacity=Number(e.target.value)/100};
 canvas.addEventListener('pointerup',e=>{if(window.mafahimState.tool==='text'){const p=pos(e),value=prompt('اكتب النص الذي تريد إضافته:');if(value){ctx.save();ctx.globalAlpha=1;ctx.fillStyle=color;ctx.font=(width*5)+'px sans-serif';ctx.fillText(value,p.x,p.y);ctx.restore();snapshot()}}});
 
