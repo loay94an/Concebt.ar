@@ -11,7 +11,7 @@ const path = require('path');
  if(drawerBg==='rgb(238, 239, 237)') throw new Error('Legacy light drawer stylesheet is still overriding the studio theme: '+drawerBg);
  await page.locator('[data-x="brushLibrary"]').click();
  await page.locator('#radialPicker').click(); await page.waitForSelector('#colorDialog.open');
- await page.locator('#customColor').fill('#12ab89'); await page.locator('#applyColor').click();
+ await page.locator('#customColor').evaluate(el=>{el.value='#12ab89'}); await page.locator('#applyColor').click();
  const activeColor=await page.locator('#radialPicker').evaluate(el=>getComputedStyle(el).getPropertyValue('--active-color').trim());
  if(activeColor!=='#12ab89') throw new Error('Color picker did not apply selected color: '+activeColor);
  await page.locator('#brushLibrary [data-preset="pencil"]').first().click();
