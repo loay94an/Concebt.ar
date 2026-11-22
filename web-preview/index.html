@@ -165,7 +165,113 @@ function renderPref(tab){$$('[data-pref]').forEach(b=>b.classList.toggle('active
 $$('[data-pref]').forEach(b=>b.onclick=()=>renderPref(b.dataset.pref));
 $$('[data-format]').forEach(b=>b.onclick=()=>{currentFormat=b.dataset.format;$$('[data-format]').forEach(x=>x.classList.toggle('active',x===b))});
 function merged(){const source=$('#board'),c=document.createElement('canvas');c.width=source.width;c.height=source.height;const x=c.getContext('2d');if($('#whiteExport').checked){x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height)}x.drawImage(source,0,0);return c}
-$('#runExport').onclick=()=>{const c=merged(),name=($('#title').value||'mafahim').trim().replace(/[^\p{L}\p{N}_-]/gu,'_');if(currentFormat==='pdf'){const win=window.open('','_blank');if(!win){alert('اسمح بالنوافذ المنبثقة لحفظ PDF');return}win.document.write('<html><body style="margin:0"><img style="width:100%" src="'+c.toDataURL('image/png')+'"><script>onload=()=>print()<\\/script></body></html>');win.document.close();close('exportDialog');return}let href,filename;if(currentFormat==='svg'){const svg='<svg xmlns="http://www.w3.org/2000/svg" width="'+c.width+'" height="'+c.height+'"><image href="'+c.toDataURL('image/png')+'" width="'+c.width+'" height="'+c.height+'"/></svg>';href=URL.createObjectURL(new Blob([svg],{type:'image/svg+xml'}));filename=name+'.svg'}else{href=c.toDataURL(currentFormat==='jpg'?'image/jpeg':'image/png',Number($('#jpgQuality').value)/100);filename=name+'.'+currentFormat}const a=document.createElement('a');a.href=href;a.download=filename;a.click();if(currentFormat==='svg')setTimeout(()=>URL.revokeObjectURL(href),1500);close('exportDialog')};
+$('#runExport').onclick=()=>{const c=merged(),name=($('#title').value||'mafahim').trim().replace(/[^\p{L}\p{N}_-]/gu,'_');if(currentFormat==='pdf'){const win=window.open('','_blank');if(!win){alert('اسمح بالنوافذ المنبثقة لحفظ PDF');return}win.document.write('<html><body style="margin:0"><img style="width:100%" src="'+c.toDataURL('image/png')+'"><script>onload=()=>print()<\\/script>
+<style>
+/* Multi-touch navigation: draw with one pointer; pan and pinch with two */
+.canvas-wrap{touch-action:none;overscroll-behavior:contain;user-select:none;-webkit-user-select:none}
+.paper{transform-origin:center center;will-change:transform}
+#zoomLabel{min-width:48px;text-align:center;font-variant-numeric:tabular-nums}
+@media(max-width:600px){.canvas-wrap{touch-action:none}.hint{max-width:75%;font-size:10px}}
+</style>
+<script>
+(()=>{
+  const viewport=document.querySelector('.canvas-wrap');
+  const paper=document.querySelector('.paper');
+  const canvas=document.querySelector('#board');
+  const zoomLabel=document.querySelector('#zoomLabel');
+  if(!viewport||!paper||!canvas)return;
+
+  const pointers=new Map();
+  let scale=1, offsetX=0, offsetY=0, gesture=null, lastTap=0;
+  const clamp=(v,min,max)=>Math.max(min,Math.min(max,v));
+  const distance=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
+  const midpoint=(a,b)=>({x:(a.x+b.x)/2,y:(a.y+b.y)/2});
+  const point=e=>({x:e.clientX,y:e.clientY});
+  function render(){
+    paper.style.transform='translate('+offsetX+'px,'+offsetY+'px) scale('+scale+')';
+    if(zoomLabel)zoomLabel.textContent=Math.round(scale*100)+'%';
+  }
+  function zoomAt(next,center){
+    const old=scale;next=clamp(next,.25,5);
+    const rect=viewport.getBoundingClientRect();
+    const cx=center?center.x:rect.left+rect.width/2;
+    const cy=center?center.y:rect.top+rect.height/2;
+    const localX=cx-(rect.left+rect.width/2)-offsetX;
+    const localY=cy-(rect.top+rect.height/2)-offsetY;
+    const ratio=next/old;
+    offsetX+=localX*(1-ratio);
+    offsetY+=localY*(1-ratio);
+    scale=next;render();
+  }
+  function resetGesture(){
+    const pts=[...pointers.values()];
+    if(pts.length>=2){
+      const a=pts[0],b=pts[1],mid=midpoint(a,b);
+      gesture={distance:Math.max(1,distance(a,b)),scale,offsetX,offsetY,mid};
+    }else gesture=null;
+  }
+
+  viewport.addEventListener('pointerdown',e=>{
+    if(e.pointerType!=='touch')return;
+    pointers.set(e.pointerId,point(e));
+    if(pointers.size>=2){
+      e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();
+      if(typeof drawing!=='undefined'&&drawing){
+        drawing=false;
+        if(typeof ctx!=='undefined'){ctx.globalAlpha=1;ctx.beginPath()}
+      }
+      resetGesture();
+    }
+  },true);
+
+  viewport.addEventListener('pointermove',e=>{
+    if(e.pointerType!=='touch'||!pointers.has(e.pointerId))return;
+    pointers.set(e.pointerId,point(e));
+    if(pointers.size>=2&&gesture){
+      e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();
+      const pts=[...pointers.values()],mid=midpoint(pts[0],pts[1]);
+      const nextDistance=Math.max(1,distance(pts[0],pts[1]));
+      const nextScale=clamp(gesture.scale*nextDistance/gesture.distance,.25,5);
+      const ratio=nextScale/gesture.scale;
+      offsetX=gesture.offsetX+(mid.x-gesture.mid.x);
+      offsetY=gesture.offsetY+(mid.y-gesture.mid.y);
+      const rect=viewport.getBoundingClientRect();
+      const anchorX=gesture.mid.x-(rect.left+rect.width/2)-gesture.offsetX;
+      const anchorY=gesture.mid.y-(rect.top+rect.height/2)-gesture.offsetY;
+      offsetX+=anchorX*(1-ratio);
+      offsetY+=anchorY*(1-ratio);
+      scale=nextScale;render();
+    }
+  },true);
+
+  function release(e){
+    if(e.pointerType!=='touch')return;
+    const wasGesture=pointers.size>=2;
+    pointers.delete(e.pointerId);
+    if(wasGesture){e.preventDefault();e.stopPropagation();e.stopImmediatePropagation()}
+    resetGesture();
+    if(pointers.size===0)gesture=null;
+  }
+  viewport.addEventListener('pointerup',release,true);
+  viewport.addEventListener('pointercancel',release,true);
+
+  document.querySelector('#zoomIn')?.addEventListener('click',e=>{e.stopImmediatePropagation();zoomAt(scale*1.15)},true);
+  document.querySelector('#zoomOut')?.addEventListener('click',e=>{e.stopImmediatePropagation();zoomAt(scale/1.15)},true);
+  viewport.addEventListener('wheel',e=>{
+    if(e.ctrlKey||e.metaKey){e.preventDefault();zoomAt(scale*Math.exp(-e.deltaY*.002),{x:e.clientX,y:e.clientY})}
+  },{passive:false});
+  viewport.addEventListener('dblclick',e=>{if(e.target===canvas||e.target===paper){scale=1;offsetX=0;offsetY=0;render()}});
+  document.addEventListener('keydown',e=>{
+    if(!(e.ctrlKey||e.metaKey))return;
+    if(e.key==='+'||e.key==='='){e.preventDefault();zoomAt(scale*1.15)}
+    if(e.key==='-'){e.preventDefault();zoomAt(scale/1.15)}
+    if(e.key==='0'){e.preventDefault();scale=1;offsetX=0;offsetY=0;render()}
+  });
+  render();
+})();
+</script>
+
+</body></html>');win.document.close();close('exportDialog');return}let href,filename;if(currentFormat==='svg'){const svg='<svg xmlns="http://www.w3.org/2000/svg" width="'+c.width+'" height="'+c.height+'"><image href="'+c.toDataURL('image/png')+'" width="'+c.width+'" height="'+c.height+'"/></svg>';href=URL.createObjectURL(new Blob([svg],{type:'image/svg+xml'}));filename=name+'.svg'}else{href=c.toDataURL(currentFormat==='jpg'?'image/jpeg':'image/png',Number($('#jpgQuality').value)/100);filename=name+'.'+currentFormat}const a=document.createElement('a');a.href=href;a.download=filename;a.click();if(currentFormat==='svg')setTimeout(()=>URL.revokeObjectURL(href),1500);close('exportDialog')};
 const key='mafahimProjects';
 function getProjects(){try{return JSON.parse(localStorage.getItem(key)||'[]')}catch(e){return []}}
 function renderProjects(){const root=$('#projectGrid');root.querySelectorAll('.saved-project').forEach(x=>x.remove());getProjects().forEach((p,i)=>{const card=document.createElement('div');card.className='project-card saved-project';const thumb=document.createElement('div');thumb.className='project-thumb';const im=document.createElement('img');im.src=p.image;im.style='width:100%;height:100%;object-fit:contain';thumb.append(im);const title=document.createElement('p');title.textContent=p.name+' · '+new Date(p.date).toLocaleDateString('ar');card.append(thumb,title);card.onclick=()=>{const img=new Image();img.onload=()=>{const c=$('#board');c.getContext('2d').clearRect(0,0,c.width,c.height);c.getContext('2d').drawImage(img,0,0,c.width,c.height);$('#title').value=p.name;close('projectsDialog')};img.src=p.image};root.append(card)})}
