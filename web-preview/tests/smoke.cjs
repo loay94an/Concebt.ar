@@ -10,7 +10,7 @@ const path = require('path');
  if(drawerBefore.display!=='block' || !drawerBefore.transform || drawerBefore.transform==='none') throw new Error('Drawer is not styled/hidden before opening: '+JSON.stringify(drawerBefore));
  await page.locator('#openBrushLibrary').click(); await page.waitForSelector('#brushLibrary.open');
  const drawerState=await page.locator('#brushLibrary').evaluate(el=>({bg:getComputedStyle(el).backgroundColor,transform:getComputedStyle(el).transform}));
- if(drawerState.bg!=='rgb(32, 35, 41)' || drawerState.transform==='none') throw new Error('Drawer dark theme or slide-in animation missing: '+JSON.stringify(drawerState));
+ if(drawerState.bg!=='rgb(241, 242, 239)' || drawerState.transform==='none') throw new Error('Brush library reference surface or slide-in animation missing: '+JSON.stringify(drawerState));
  await page.locator('#brushLibrary [data-preset="pencil"]').first().click();
  const overlayBefore=await page.locator('#colorDialog').evaluate(el=>getComputedStyle(el).display);
  if(overlayBefore!=='none') throw new Error('Color dialog is visible before opening: '+overlayBefore);
