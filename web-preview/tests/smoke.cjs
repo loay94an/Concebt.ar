@@ -12,7 +12,6 @@ const path = require('path');
  const drawerState=await page.locator('#brushLibrary').evaluate(el=>({bg:getComputedStyle(el).backgroundColor,transform:getComputedStyle(el).transform}));
  if(drawerState.bg!=='rgb(32, 35, 41)' || drawerState.transform==='none') throw new Error('Drawer dark theme or slide-in animation missing: '+JSON.stringify(drawerState));
  await page.locator('#brushLibrary [data-preset="pencil"]').first().click();
- await page.locator('[data-x="brushLibrary"]').click();
  const overlayBefore=await page.locator('#colorDialog').evaluate(el=>getComputedStyle(el).display);
  if(overlayBefore!=='none') throw new Error('Color dialog is visible before opening: '+overlayBefore);
  await page.locator('#radialPicker').click(); await page.waitForSelector('#colorDialog.open');
@@ -22,7 +21,6 @@ const path = require('path');
  await page.locator('#applyColor').click();
  const activeColor=await page.locator('#radialPicker').evaluate(el=>getComputedStyle(el).getPropertyValue('--active-color').trim());
  if(activeColor!=='#12ab89') throw new Error('Color picker did not apply selected color: '+activeColor);
- await page.locator('[data-x="colorDialog"]').click();
 
  await page.locator('#openPreferences').click(); await page.waitForSelector('#preferencesDialog.open');
  await page.locator('[data-pref="stylus"]').click(); await page.locator('[data-x="preferencesDialog"]').click();
