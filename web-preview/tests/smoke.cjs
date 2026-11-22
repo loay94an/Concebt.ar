@@ -31,7 +31,7 @@ const path = require('path');
  await page.locator('#calligraphyAngle').evaluate(el=>{el.value='123';el.dispatchEvent(new Event('input',{bubbles:true}))});
  if((await page.locator('#calligraphyAngleValue').textContent()).trim()!=='123°') throw new Error('Calligraphy angle slider did not update live');
  if((await page.locator('#calligraphyAngle').getAttribute('step'))!=='1') throw new Error('Calligraphy angle must use 1-degree steps');
- if(!(await page.locator('#brushLibrary [data-preset="pencil"] b').evaluate(el=>getComputedStyle(el,'::after').height!=='0px'))) throw new Error('Brush stroke preview missing');
+ if(!(await page.locator('#brushLibrary [data-preset="pencil"] b').first().evaluate(el=>getComputedStyle(el,'::after').height!=='0px'))) throw new Error('Brush stroke preview missing');
  await page.locator('#openPreferences').click(); await page.waitForSelector('#preferencesDialog.open');
  await page.locator('[data-pref="stylus"]').click(); await page.locator('[data-x="preferencesDialog"]').click();
  await page.locator('#openWorkspace').click(); await page.waitForSelector('#workspaceDrawer.open');
