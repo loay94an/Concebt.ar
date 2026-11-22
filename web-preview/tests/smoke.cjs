@@ -17,7 +17,7 @@ const path = require('path');
  await page.locator('#radialPicker').click(); await page.waitForSelector('#colorDialog.open');
  if(!(await page.locator('#colorWheel').count())) throw new Error('Interactive radial color wheel is missing');
  const wheelBox=await page.locator('#colorWheel').boundingBox();
- await page.mouse.click(wheelBox.x+wheelBox.width*.78,wheelBox.y+wheelBox.height*.42);
+ await page.mouse.click(wheelBox.x+wheelBox.width*.90,wheelBox.y+wheelBox.height*.50);
  const wheelHex=await page.locator('#wheelHex').textContent();
  if(!/^#[0-9A-F]{6}$/i.test(wheelHex.trim())) throw new Error('Radial wheel did not produce a valid color: '+wheelHex);
  const overlayAfter=await page.locator('#colorDialog').evaluate(el=>getComputedStyle(el).display);
@@ -39,13 +39,19 @@ const path = require('path');
  await page.locator('#export').click(); await page.waitForSelector('#exportDialog.open');
  await page.locator('[data-format="jpg"]').click(); await page.locator('[data-x="exportDialog"]').click();
  await page.locator('#board').scrollIntoViewIfNeeded();
- const box=await page.locator('#board').boundingBox();
- await page.mouse.move(box.x+100,box.y+100); await page.mouse.down();
- await page.mouse.move(box.x+160,box.y+150,{steps:5}); await page.mouse.up();
+ const world=await page.locator('#board').evaluate(el=>({width:el.width,height:el.height,bg:getComputedStyle(el).backgroundColor}));
+ const paperSize=await page.locator('.paper').evaluate(el=>({width:el.getBoundingClientRect().width,height:el.getBoundingClientRect().height}));
+ if(world.width<4000||world.height<4000||paperSize.width<4000||world.bg!=='rgba(0, 0, 0, 0)') throw new Error('Drawing world is not large and borderless: '+JSON.stringify({world,paperSize}));
+ const view=await page.locator('.canvas-wrap').boundingBox();
+ const drawX=view.x+view.width/2,drawY=view.y+view.height/2;
+ await page.mouse.move(drawX,drawY); await page.mouse.down();
+ await page.mouse.move(drawX+60,drawY+50,{steps:5}); await page.mouse.up();
+ const expanded=await page.evaluate(()=>{const c=document.querySelector('#board'),before=c.width;window.mafahimExpandWorld({x:c.width-80,y:c.height/2});return {before,after:c.width,paper:getComputedStyle(document.querySelector('.paper')).width}});
+ if(expanded.after<=expanded.before||parseFloat(expanded.paper)<=expanded.before) throw new Error('Canvas did not grow when drawing reached its edge: '+JSON.stringify(expanded));
 
  // Exercise real two-contact touch input through Chromium's DevTools protocol.
  const cdp=await page.context().newCDPSession(page);
- const centerX=box.x+box.width/2, centerY=box.y+box.height/2;
+ const centerX=view.x+view.width/2, centerY=view.y+view.height/2;
  const before=await page.locator('.paper').evaluate(el=>el.style.transform);
  await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[
   {x:centerX-35,y:centerY-20,id:1},{x:centerX+35,y:centerY+20,id:2}

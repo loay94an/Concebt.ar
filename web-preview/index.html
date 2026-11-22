@@ -162,7 +162,7 @@ canvas{width:100%;height:100%;background:#fff}
 .color-dialog{width:min(560px,95vw);background:#f5f5f2;color:#202020;border:1px solid #d3d3ce;border-radius:8px;padding:18px;box-shadow:0 18px 60px #0004}
 .color-dialog .dialog-head{border-color:#d7d7d1}.color-dialog .dialog-head h2{color:#202020}.color-dialog .dialog-head button{background:#fff;color:#222;border-color:#ccc}
 .wheel-layout{display:grid;grid-template-columns:minmax(220px,1fr) minmax(150px,.8fr);align-items:center;gap:18px}
-.wheel-stage{position:relative;display:grid;place-items:center;min-width:0}.wheel-stage canvas{width:min(100%,260px);height:auto;aspect-ratio:1;cursor:crosshair;touch-action:none}
+.wheel-stage{position:relative;display:grid;place-items:center;min-width:0}.wheel-stage canvas{width:min(100%,340px);height:auto;aspect-ratio:1;cursor:crosshair;touch-action:none}
 .wheel-center{position:absolute;width:34px;height:34px;border:3px solid #fff;border-radius:50%;box-shadow:0 1px 8px #0005;background:#24212e;pointer-events:none}
 .wheel-controls{display:flex;flex-direction:column;gap:13px}.wheel-preview{display:flex;align-items:center;gap:8px;font-size:11px;color:#555}.wheel-preview i{width:28px;height:28px;border:2px solid #fff;box-shadow:0 0 0 1px #bbb;border-radius:50%;background:#24212e}.wheel-preview code{font-size:11px;color:#222}.wheel-range{display:flex;flex-direction:column;gap:6px;color:#555;font-size:11px}.wheel-range input{width:100%;accent-color:#333}.color-dialog .dialog-row{color:#333;border-color:#ddd}.color-dialog .dialog-row input[type=color]{width:44px;height:30px;border:0;background:none}.color-dialog .primary{background:#222;color:#fff;border-color:#222;border-radius:5px;padding:10px}
 .calligraphy-control{display:none;min-width:140px}.calligraphy-control .range{display:block;min-width:100px}.calligraphy-control output{font-weight:700;color:var(--accent-strong)}
@@ -176,7 +176,7 @@ canvas{width:100%;height:100%;background:#fff}
 .drawer-grid [data-preset="line"] b:after{height:2px;background:#333;transform:rotate(-18deg)}
 .drawer-grid [data-preset="rect"] b:after{height:10px;top:2px;left:14px;right:14px;border:1.5px solid #333;background:transparent;border-radius:1px}
 .drawer-grid [data-preset="ellipse"] b:after{height:11px;top:1px;left:18px;right:18px;border:1.5px solid #333;background:transparent;border-radius:50%}
-@media(max-width:560px){.wheel-layout{grid-template-columns:1fr;gap:8px}.wheel-stage canvas{width:220px}.wheel-controls{display:grid;grid-template-columns:1fr 1fr;gap:9px}.wheel-preview,.wheel-controls .primary,.wheel-controls .dialog-row{grid-column:1/-1}.color-dialog{padding:12px}.calligraphy-control{grid-column:1/-1}}
+@media(max-width:560px){.wheel-layout{grid-template-columns:1fr;gap:8px}.wheel-stage canvas{width:min(82vw,310px)}.wheel-controls{display:grid;grid-template-columns:1fr 1fr;gap:9px}.wheel-preview,.wheel-controls .primary,.wheel-controls .dialog-row{grid-column:1/-1}.color-dialog{padding:12px}.calligraphy-control{grid-column:1/-1}}
 </style>
 </head>
 <body><main class="app">
@@ -185,7 +185,7 @@ canvas{width:100%;height:100%;background:#fff}
 <aside class="rail" aria-label="أدوات الرسم">
 <button class="tool active" data-tool="pen" title="قلم">✎</button><button class="tool" data-tool="pencil" title="رصاص">⌁</button><button class="tool" data-tool="marker" title="قلم تمييز">▰</button><button class="tool" data-tool="calligraphy" title="قلم خط عربي">خط</button><button class="tool" data-tool="line" title="خط">／</button><button class="tool" data-tool="rect" title="مستطيل">▱</button><button class="tool" data-tool="ellipse" title="دائرة">◯</button><button class="tool" data-tool="eraser" title="ممحاة">⌫</button><button class="tool" data-tool="hand" title="تحريك">✋</button><button class="tool" data-tool="select" title="تحديد">⌖</button><button class="tool" data-tool="fill" title="تعبئة">◉</button><button class="tool" data-tool="text" title="نص">T</button><button class="tool" data-tool="nudge" title="إزاحة">↝</button><button class="tool" id="imageBtn" title="استيراد صورة أو ملف">▧</button><input id="imageInput" type="file" accept="image/*" hidden>
 </aside>
-<section class="stage"><div class="stagebar"><span>لوحة العمل</span><span>•</span><input id="title" aria-label="اسم المشروع" value="رسم جديد" style="width:130px;background:#242137;color:#fff;border:1px solid #343047;border-radius:7px;padding:5px"><div class="spacer"></div><span id="zoomLabel">100%</span><button id="zoomOut">−</button><button id="zoomIn">＋</button></div><div class="canvas-wrap"><div class="radial-picker" id="radialPicker" role="button" tabindex="0" title="منتقي الألوان"><span>COLOR</span></div><div class="quick-float"><button id="quickUndo" title="تراجع">↶</button><button id="quickRedo" title="إعادة">↷</button><button id="quickExport" title="تصدير">⇧</button><button id="quickPrefs" title="الإعدادات">⚙</button><button id="quickHelp" title="مساعدة">?</button></div><div class="paper"><canvas id="board" width="1000" height="1600"></canvas></div><div class="canvas-bottom-tools"><label><input type="checkbox" id="canvasGrid"> Grid</label><label><input type="checkbox" id="canvasSnap"> Snap</label><label><input type="checkbox" id="canvasGuide"> Guide</label><label><input type="checkbox" id="canvasArc"> Arc</label></div><div class="hint">اسحب بإصبعك أو الفأرة للرسم على اللوحة</div></div></section>
+<section class="stage"><div class="stagebar"><span>لوحة العمل</span><span>•</span><input id="title" aria-label="اسم المشروع" value="رسم جديد" style="width:130px;background:#242137;color:#fff;border:1px solid #343047;border-radius:7px;padding:5px"><div class="spacer"></div><span id="zoomLabel">100%</span><button id="zoomOut">−</button><button id="zoomIn">＋</button></div><div class="canvas-wrap"><div class="radial-picker" id="radialPicker" role="button" tabindex="0" title="منتقي الألوان"><span>COLOR</span></div><div class="quick-float"><button id="quickUndo" title="تراجع">↶</button><button id="quickRedo" title="إعادة">↷</button><button id="quickExport" title="تصدير">⇧</button><button id="quickPrefs" title="الإعدادات">⚙</button><button id="quickHelp" title="مساعدة">?</button></div><div class="paper"><canvas id="board" width="4096" height="4096"></canvas></div><div class="canvas-bottom-tools"><label><input type="checkbox" id="canvasGrid"> Grid</label><label><input type="checkbox" id="canvasSnap"> Snap</label><label><input type="checkbox" id="canvasGuide"> Guide</label><label><input type="checkbox" id="canvasArc"> Arc</label></div><div class="hint">اسحب بإصبعك أو الفأرة للرسم على اللوحة</div></div></section>
 <aside class="inspector"><h3>خصائص الأداة</h3><div class="section calligraphy-control" id="calligraphyControls"><div>زاوية سنّ الخط العربي</div><div class="muted"><output id="calligraphyAngleValue">45°</output> · من 0° إلى 180°</div><input class="range" id="calligraphyAngle" type="range" min="0" max="180" step="1" value="45" aria-label="زاوية الخط العربي"></div><div class="section"><div>اللون</div><div class="muted">اختر لون الرسم</div><div class="colors" id="colors"></div></div><div class="section"><div>سُمك الفرشاة</div><div class="muted"><span id="widthLabel">6</span> px</div><input class="range" id="width" type="range" min="1" max="48" value="6"></div><div class="section"><div>الطبقات</div><div class="layer"><span>◉ الطبقة الأولى</span><span>⋮</span></div><button style="width:100%;margin-top:9px" id="addLayer">＋ إضافة طبقة</button></div><div class="section"><div>الصفحات</div><div class="layer"><span>▧ الصفحة 1</span><span>نشطة</span></div><button style="width:100%;margin-top:9px" id="addPage">＋ صفحة جديدة</button></div></aside>
 </section><footer class="bottom"><span>مفاهيم · استوديو الرسم</span><span>Grid <button id="gridToggle">شبكة</button> <button id="snapToggle">Snap</button> <button id="guideToggle">Guide</button> <button id="arcToggle">Arc</button> <button id="importMenu">استيراد</button> <button id="shareProject">مشاركة</button></span></footer>
 </main>
@@ -193,19 +193,32 @@ canvas{width:100%;height:100%;background:#fff}
 const canvas=document.getElementById('board'),ctx=canvas.getContext('2d');let tool='pen',color='#24212e',width=6,drawing=false,start=null,calligraphyLast=null,zoom=100,history=[],redoStack=[],pages=1,layers=1;
 const colors=['#24212e','#8b5cf6','#ec4899','#06b6d4','#10b981','#f59e0b','#ef4444','#3b82f6','#111827','#ffffff'];
 function snapshot(){history.push(canvas.toDataURL());if(history.length>40)history.shift();redoStack=[]}
-function restore(url){const im=new Image();im.onload=()=>{ctx.clearRect(0,0,canvas.width,canvas.height);ctx.drawImage(im,0,0)};im.src=url}
-function setup(){ctx.fillStyle='#fff';ctx.fillRect(0,0,canvas.width,canvas.height);snapshot()}setup();
+function restore(url){const im=new Image();im.onload=()=>{ctx.clearRect(0,0,canvas.width,canvas.height);ctx.drawImage(im,(canvas.width-im.width)/2,(canvas.height-im.height)/2)};im.src=url}
+function setup(){ctx.clearRect(0,0,canvas.width,canvas.height);snapshot()}setup();
 const colorBox=document.getElementById('colors');colors.forEach(c=>{const b=document.createElement('button');b.className='swatch'+(c===color?' active':'');b.style.background=c;b.title=c;b.onclick=()=>{color=c;document.querySelectorAll('.swatch').forEach(x=>x.classList.toggle('active',x===b))};colorBox.append(b)});
 document.querySelectorAll('[data-tool]').forEach(b=>b.onclick=()=>{tool=b.dataset.tool;document.querySelectorAll('[data-tool]').forEach(x=>x.classList.toggle('active',x===b))});
 document.getElementById('width').oninput=e=>{width=+e.target.value;document.getElementById('widthLabel').textContent=width};
 function pos(e){const r=canvas.getBoundingClientRect();return{x:(e.clientX-r.left)*canvas.width/r.width,y:(e.clientY-r.top)*canvas.height/r.height}}
-canvas.addEventListener('pointerdown',e=>{if(tool==='hand')return;canvas.setPointerCapture(e.pointerId);snapshot();drawing=true;start=pos(e);calligraphyLast=start;ctx.beginPath();ctx.moveTo(start.x,start.y);ctx.lineCap='round';ctx.lineJoin='round';ctx.lineWidth=tool==='eraser'?width*5:width;ctx.strokeStyle=tool==='eraser'?'#fff':color;ctx.globalAlpha=tool==='marker'?.28:1});
-canvas.addEventListener('pointermove',e=>{if(!drawing)return;const p=pos(e);if(['pen','pencil','marker','eraser'].includes(tool)){ctx.lineTo(p.x,p.y);ctx.stroke()}else if(tool==='calligraphy'&&calligraphyLast){const a=(Number(document.getElementById('calligraphyAngle')?.value||45))*Math.PI/180,dx=Math.cos(a)*width*.5,dy=Math.sin(a)*width*.5;ctx.save();ctx.globalAlpha=1;ctx.fillStyle=color;ctx.beginPath();ctx.moveTo(calligraphyLast.x-dx,calligraphyLast.y-dy);ctx.lineTo(p.x-dx,p.y-dy);ctx.lineTo(p.x+dx,p.y+dy);ctx.lineTo(calligraphyLast.x+dx,calligraphyLast.y+dy);ctx.closePath();ctx.fill();ctx.restore();calligraphyLast=p}});
-function finish(e){if(!drawing)return;drawing=false;calligraphyLast=null;const p=pos(e);ctx.globalAlpha=1;if(['line','rect','ellipse'].includes(tool)){ctx.strokeStyle=color;ctx.lineWidth=width;ctx.beginPath();if(tool==='line'){ctx.moveTo(start.x,start.y);ctx.lineTo(p.x,p.y)}else if(tool==='rect'){ctx.rect(start.x,start.y,p.x-start.x,p.y-start.y)}else ctx.ellipse((start.x+p.x)/2,(start.y+p.y)/2,Math.abs(p.x-start.x)/2,Math.abs(p.y-start.y)/2,0,0,Math.PI*2);ctx.stroke()}ctx.globalAlpha=1;ctx.beginPath()}
+function expandCanvasNear(p){
+ const edge=360,grow=2048,addX=(p.x<edge||p.x>canvas.width-edge)?grow:0,addY=(p.y<edge||p.y>canvas.height-edge)?grow:0;
+ if(!addX&&!addY)return null;
+ const oldW=canvas.width,oldH=canvas.height,dx=addX/2,dy=addY/2,copy=document.createElement('canvas');
+ copy.width=oldW;copy.height=oldH;copy.getContext('2d').drawImage(canvas,0,0);
+ canvas.width=oldW+addX;canvas.height=oldH+addY;ctx.drawImage(copy,dx,dy);
+ const paper=document.querySelector('.paper');
+ paper.style.setProperty('--world-width',canvas.width+'px');paper.style.setProperty('--world-height',canvas.height+'px');
+ canvas.style.setProperty('--world-width',canvas.width+'px');canvas.style.setProperty('--world-height',canvas.height+'px');
+ document.dispatchEvent(new CustomEvent('mafahim-world-expand',{detail:{dx,dy}}));
+ return {dx,dy};
+}
+window.mafahimExpandWorld=expandCanvasNear;
+canvas.addEventListener('pointerdown',e=>{if(tool==='hand')return;canvas.setPointerCapture(e.pointerId);let p=pos(e);expandCanvasNear(p);snapshot();drawing=true;start=pos(e);calligraphyLast=start;ctx.beginPath();ctx.moveTo(start.x,start.y);ctx.lineCap='round';ctx.lineJoin='round';ctx.lineWidth=tool==='eraser'?width*5:width;ctx.strokeStyle=color;ctx.globalCompositeOperation=tool==='eraser'?'destination-out':'source-over';ctx.globalAlpha=(tool==='marker'?.28:1)*(window.mafahimOpacity??1)});
+canvas.addEventListener('pointermove',e=>{if(!drawing)return;let p=pos(e);const grown=expandCanvasNear(p);if(grown){start.x+=grown.dx;start.y+=grown.dy;if(calligraphyLast){calligraphyLast.x+=grown.dx;calligraphyLast.y+=grown.dy}p=pos(e);ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineCap='round';ctx.lineJoin='round';ctx.lineWidth=tool==='eraser'?width*5:width;ctx.strokeStyle=color;ctx.globalCompositeOperation=tool==='eraser'?'destination-out':'source-over';ctx.globalAlpha=(tool==='marker'?.28:1)*(window.mafahimOpacity??1);return}if(['pen','pencil','marker','eraser'].includes(tool)){ctx.lineTo(p.x,p.y);ctx.stroke()}else if(tool==='calligraphy'&&calligraphyLast){const a=(Number(document.getElementById('calligraphyAngle')?.value||45))*Math.PI/180,dx=Math.cos(a)*width*.5,dy=Math.sin(a)*width*.5;ctx.save();ctx.globalAlpha=1;ctx.fillStyle=color;ctx.beginPath();ctx.moveTo(calligraphyLast.x-dx,calligraphyLast.y-dy);ctx.lineTo(p.x-dx,p.y-dy);ctx.lineTo(p.x+dx,p.y+dy);ctx.lineTo(calligraphyLast.x+dx,calligraphyLast.y+dy);ctx.closePath();ctx.fill();ctx.restore();calligraphyLast=p}});
+function finish(e){if(!drawing)return;drawing=false;calligraphyLast=null;const p=pos(e);ctx.globalAlpha=1;if(['line','rect','ellipse'].includes(tool)){ctx.strokeStyle=color;ctx.lineWidth=width;ctx.beginPath();if(tool==='line'){ctx.moveTo(start.x,start.y);ctx.lineTo(p.x,p.y)}else if(tool==='rect'){ctx.rect(start.x,start.y,p.x-start.x,p.y-start.y)}else ctx.ellipse((start.x+p.x)/2,(start.y+p.y)/2,Math.abs(p.x-start.x)/2,Math.abs(p.y-start.y)/2,0,0,Math.PI*2);ctx.stroke()}ctx.globalAlpha=1;ctx.globalCompositeOperation='source-over';ctx.beginPath()}
 canvas.addEventListener('pointerup',finish);canvas.addEventListener('pointercancel',finish);
 document.getElementById('undo').onclick=()=>{if(history.length>1){redoStack.push(canvas.toDataURL());history.pop();restore(history[history.length-1])}};
 document.getElementById('redo').onclick=()=>{if(redoStack.length){const s=redoStack.pop();history.push(s);restore(s)}};
-document.getElementById('clear').onclick=()=>{snapshot();ctx.fillStyle='#fff';ctx.fillRect(0,0,canvas.width,canvas.height)};
+document.getElementById('clear').onclick=()=>{snapshot();ctx.clearRect(0,0,canvas.width,canvas.height)};
 document.getElementById('export').onclick=()=>{const a=document.createElement('a');a.download='mafahim-board.png';a.href=canvas.toDataURL('image/png');a.click()};
 document.getElementById('zoomIn').onclick=()=>setZoom(zoom+10);document.getElementById('zoomOut').onclick=()=>setZoom(zoom-10);function setZoom(v){zoom=Math.max(50,Math.min(160,v));document.getElementById('zoomLabel').textContent=zoom+'%';document.querySelector('.paper').style.transform='scale('+zoom/100+')';document.querySelector('.paper').style.transformOrigin='center center'}
 document.getElementById('addLayer').onclick=()=>{layers++;const x=document.createElement('div');x.className='layer';x.innerHTML='<span>◉ الطبقة '+(layers===2?'الثانية':layers)+'</span><span>⋮</span>';document.querySelectorAll('.section')[2].insertBefore(x,document.getElementById('addLayer'))};
@@ -249,7 +262,7 @@ window.mafahimState={get tool(){return tool},canvas,ctx,pos};
 <div class="overlay" id="projectsDialog"><div class="dialog"><div class="dialog-head"><h2>المشاريع والرسومات</h2><button data-x="projectsDialog">✕</button></div><div class="project-grid" id="projectGrid"><div class="project-card" id="newDrawingCard"><div class="project-thumb">＋</div><p>رسم جديد</p></div></div><div class="dialog-row"><button class="primary" id="saveProject">حفظ المشروع محلياً</button><button id="newDrawing">مشروع جديد</button></div><p class="dialog-note">المشاريع تحفظ محلياً في متصفحك ولا يتم رفعها إلى خادم.</p></div></div>
 
 <div class="overlay" id="importDialog"><div class="dialog"><div class="dialog-head"><h2>إضافة محتوى إلى اللوحة</h2><button data-x="importDialog">✕</button></div><div class="dialog-grid"><button id="choosePhoto">▧<br>الصور</button><button id="chooseFile">▤<br>الملفات</button><button id="pasteImage">▣<br>من الحافظة</button><button id="takePhoto">◎<br>التقاط صورة</button></div><p class="dialog-note">اختيار الصور والملفات من جهازك. التقاط الصورة يتطلب دعم الكاميرا من المتصفح.</p></div></div>
-<div class="overlay" id="colorDialog"><div class="dialog color-dialog"><div class="dialog-head"><h2>عجلة الألوان</h2><button data-x="colorDialog" aria-label="إغلاق">✕</button></div><div class="wheel-layout"><div class="wheel-stage"><canvas id="colorWheel" width="260" height="260" aria-label="عجلة اختيار اللون"></canvas><div class="wheel-center" id="wheelCenter"></div></div><div class="wheel-controls"><div class="wheel-preview"><span>اللون المختار</span><i id="wheelPreview"></i><code id="wheelHex">#24212E</code></div><label class="wheel-range">الإضاءة <input id="wheelBrightness" type="range" min="25" max="100" value="100"></label><label class="wheel-range">الشفافية <input id="opacityControl" type="range" min="5" max="100" value="100"></label><div class="dialog-row">لون دقيق <input id="customColor" type="color" value="#24212e"></div><button class="primary" id="applyColor">اعتماد اللون</button></div></div><p class="dialog-note">اسحب داخل العجلة لاختيار درجة اللون والتشبّع، أو استخدم الضغط المطوّل على زر اللون لالتقاط لون من الرسم.</p></div></div>
+<div class="overlay" id="colorDialog"><div class="dialog color-dialog"><div class="dialog-head"><h2>عجلة الألوان</h2><button data-x="colorDialog" aria-label="إغلاق">✕</button></div><div class="wheel-layout"><div class="wheel-stage"><canvas id="colorWheel" width="360" height="360" aria-label="عجلة الألوان مع حلقة الطيف ومثلث التشبع والإضاءة"></canvas><div class="wheel-center" id="wheelCenter"></div></div><div class="wheel-controls"><div class="wheel-preview"><span>اللون المختار</span><i id="wheelPreview"></i><code id="wheelHex">#24212E</code></div><label class="wheel-range">الإضاءة <input id="wheelBrightness" type="range" min="25" max="100" value="100"></label><label class="wheel-range">الشفافية <input id="opacityControl" type="range" min="5" max="100" value="100"></label><div class="dialog-row">لون دقيق <input id="customColor" type="color" value="#24212e"></div><button class="primary" id="applyColor">اعتماد اللون</button></div></div><p class="dialog-note">اسحب داخل العجلة لاختيار درجة اللون والتشبّع، أو استخدم الضغط المطوّل على زر اللون لالتقاط لون من الرسم.</p></div></div>
 <script>
 (()=>{
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
@@ -297,7 +310,7 @@ const key='mafahimProjects';
 function getProjects(){try{return JSON.parse(localStorage.getItem(key)||'[]')}catch(e){return []}}
 function renderProjects(){const root=$('#projectGrid');root.querySelectorAll('.saved-project').forEach(x=>x.remove());getProjects().forEach((p,i)=>{const card=document.createElement('div');card.className='project-card saved-project';const thumb=document.createElement('div');thumb.className='project-thumb';const im=document.createElement('img');im.src=p.image;im.style='width:100%;height:100%;object-fit:contain';thumb.append(im);const title=document.createElement('p');title.textContent=p.name+' · '+new Date(p.date).toLocaleDateString('ar');card.append(thumb,title);card.onclick=()=>{const img=new Image();img.onload=()=>{const c=$('#board');c.getContext('2d').clearRect(0,0,c.width,c.height);c.getContext('2d').drawImage(img,0,0,c.width,c.height);$('#title').value=p.name;close('projectsDialog')};img.src=p.image};root.append(card)})}
 $('#saveProject').onclick=()=>{const name=$('#title').value||'رسم بدون عنوان',image=$('#board').toDataURL('image/png'),items=getProjects();items.unshift({name,image,date:Date.now()});localStorage.setItem(key,JSON.stringify(items.slice(0,12)));renderProjects();alert('تم حفظ نسخة من الرسم محلياً في هذا المتصفح')};
-function newDrawing(){if(!confirm('بدء رسم جديد؟ احفظ العمل الحالي أولاً إذا أردت الاحتفاظ به.'))return;const c=$('#board'),x=c.getContext('2d');x.clearRect(0,0,c.width,c.height);x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);$('#title').value='رسم جديد';close('projectsDialog')}
+function newDrawing(){if(!confirm('بدء رسم جديد؟ احفظ العمل الحالي أولاً إذا أردت الاحتفاظ به.'))return;const c=$('#board'),x=c.getContext('2d');x.clearRect(0,0,c.width,c.height);$('#title').value='رسم جديد';close('projectsDialog')}
 $('#newDrawing').onclick=$('#newDrawingCard').onclick=newDrawing;
 $('#imageBtn').onclick=()=>open('importDialog');
 $('#choosePhoto').onclick=()=>{const i=$('#imageInput');i.accept='image/*';i.click();close('importDialog')};
@@ -344,6 +357,9 @@ canvas.addEventListener('pointerup',e=>{if(window.mafahimState.tool==='text'){co
     paper.style.transform='translate('+offsetX+'px,'+offsetY+'px) scale('+scale+')';
     if(zoomLabel)zoomLabel.textContent=Math.round(scale*100)+'%';
   }
+  document.addEventListener('mafahim-world-expand',e=>{
+    offsetX+=(e.detail?.dx||0)*scale;offsetY+=(e.detail?.dy||0)*scale;render();
+  });
   function zoomAt(next,center){
     const old=scale;next=clamp(next,.25,5);
     const rect=viewport.getBoundingClientRect();
@@ -360,13 +376,20 @@ canvas.addEventListener('pointerup',e=>{if(window.mafahimState.tool==='text'){co
     const pts=[...pointers.values()];
     if(pts.length>=2){
       const a=pts[0],b=pts[1],mid=midpoint(a,b);
-      gesture={distance:Math.max(1,distance(a,b)),scale,offsetX,offsetY,mid};
+      gesture={mode:'pinch',distance:Math.max(1,distance(a,b)),scale,offsetX,offsetY,mid};
+    }else if(pts.length===1&&window.mafahimState?.tool==='hand'){
+      gesture={mode:'pan',start:pts[0],offsetX,offsetY};
     }else gesture=null;
   }
 
   viewport.addEventListener('pointerdown',e=>{
-    if(e.pointerType!=='touch')return;
+    if(e.pointerType!=='touch'&&window.mafahimState?.tool!=='hand')return;
     pointers.set(e.pointerId,point(e));
+    if(pointers.size===1&&window.mafahimState?.tool==='hand'){
+      gesture={mode:'pan',start:point(e),offsetX,offsetY};
+      try{viewport.setPointerCapture(e.pointerId)}catch(_){}
+      e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();
+    }
     if(pointers.size>=2){
       e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();
       if(typeof drawing!=='undefined'&&drawing){
@@ -378,9 +401,16 @@ canvas.addEventListener('pointerup',e=>{if(window.mafahimState.tool==='text'){co
   },true);
 
   viewport.addEventListener('pointermove',e=>{
-    if(e.pointerType!=='touch'||!pointers.has(e.pointerId))return;
+    if(!pointers.has(e.pointerId))return;
     pointers.set(e.pointerId,point(e));
-    if(pointers.size>=2&&gesture){
+    if(pointers.size===1&&gesture?.mode==='pan'){
+      e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();
+      const p=point(e);
+      offsetX=gesture.offsetX+p.x-gesture.start.x;
+      offsetY=gesture.offsetY+p.y-gesture.start.y;
+      render();return;
+    }
+    if(pointers.size>=2&&gesture?.mode==='pinch'){
       e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();
       const pts=[...pointers.values()],mid=midpoint(pts[0],pts[1]);
       const nextDistance=Math.max(1,distance(pts[0],pts[1]));
@@ -398,8 +428,8 @@ canvas.addEventListener('pointerup',e=>{if(window.mafahimState.tool==='text'){co
   },true);
 
   function release(e){
-    if(e.pointerType!=='touch')return;
-    const wasGesture=pointers.size>=2;
+    if(!pointers.has(e.pointerId))return;
+    const wasGesture=pointers.size>=2||gesture?.mode==='pan';
     pointers.delete(e.pointerId);
     if(wasGesture){e.preventDefault();e.stopPropagation();e.stopImmediatePropagation()}
     resetGesture();
@@ -429,14 +459,35 @@ canvas.addEventListener('pointerup',e=>{if(window.mafahimState.tool==='text'){co
  const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
  const wheel=$('#colorWheel'),wctx=wheel?.getContext('2d'),picker=$('#radialPicker');
  if(!wheel||!wctx||!picker)return;
- let hue=0,saturation=.72,value=1,chosen='#24212e',wheelDrag=false,longPressTimer=null,longPressFired=false;
+ let hue=0,saturation=.72,value=1,chosen='#24212e',wheelDrag=false,longPressTimer=null,longPressFired=false,opacity=1;
  const hsvToRgb=(h,s,v)=>{const f=(n,k=(n+h/60)%6)=>v-v*s*Math.max(Math.min(k,4-k,1),0);return [f(5),f(3),f(1)].map(x=>Math.round(x*255))};
  const rgbHex=rgb=>'#'+rgb.map(x=>x.toString(16).padStart(2,'0')).join('');
- function paintWheel(){const n=wheel.width,cx=n/2,cy=n/2,r=n/2-3,img=wctx.createImageData(n,n);for(let y=0;y<n;y++)for(let x=0;x<n;x++){const dx=x-cx,dy=y-cy,d=Math.hypot(dx,dy),i=(y*n+x)*4;if(d<=r){const h=(Math.atan2(dy,dx)*180/Math.PI+360)%360,s=Math.min(1,d/r),rgb=hsvToRgb(h,s,value);img.data[i]=rgb[0];img.data[i+1]=rgb[1];img.data[i+2]=rgb[2];img.data[i+3]=255}}wctx.putImageData(img,0,0);const a=hue*Math.PI/180,rr=saturation*r;const x=cx+Math.cos(a)*rr,y=cy+Math.sin(a)*rr;$('#wheelCenter').style.transform='translate('+(x-cx)+'px,'+(y-cy)+'px)';$('#wheelCenter').style.background=chosen;$('#wheelPreview').style.background=chosen;$('#wheelHex').textContent=chosen.toUpperCase();$('#customColor').value=chosen;}
+ const tri=[{x:180,y:76},{x:90,y:232},{x:270,y:232}];
+ function bary(p){const [a,b,c]=tri,v0={x:b.x-a.x,y:b.y-a.y},v1={x:c.x-a.x,y:c.y-a.y},v2={x:p.x-a.x,y:p.y-a.y},d=v0.x*v1.y-v1.x*v0.y;if(!d)return [1,0,0];const wb=(v2.x*v1.y-v1.x*v2.y)/d,wc=(v0.x*v2.y-v2.x*v0.y)/d;return [1-wb-wc,wb,wc]}
+ function insideTriangle(w){return w.every(v=>v>=-.015)&&w.every(v=>v<=1.015)}
+ function paintWheel(){
+  const n=wheel.width,cx=n/2,cy=n/2,img=wctx.createImageData(n,n),outer=170,inner=139;
+  for(let y=0;y<n;y++)for(let x=0;x<n;x++){const dx=x-cx,dy=y-cy,d=Math.hypot(dx,dy),i=(y*n+x)*4;let rgb=null;
+   if(d>=inner&&d<=outer){const h=(Math.atan2(dy,dx)*180/Math.PI+360)%360;rgb=hsvToRgb(h,1,1)}
+   else {const weights=bary({x,y});if(insideTriangle(weights)){const pure=hsvToRgb(hue,1,1);rgb=[0,1,2].map(k=>Math.round(255*weights[0]+pure[k]*weights[1]))}}
+   if(rgb){img.data[i]=rgb[0];img.data[i+1]=rgb[1];img.data[i+2]=rgb[2];img.data[i+3]=255}
+  }
+  wctx.putImageData(img,0,0);
+  const a=hue*Math.PI/180,rx=cx+Math.cos(a)*154,ry=cy+Math.sin(a)*154;
+  wctx.beginPath();wctx.arc(rx,ry,7,0,Math.PI*2);wctx.strokeStyle='#fff';wctx.lineWidth=3;wctx.stroke();wctx.strokeStyle='#222';wctx.lineWidth=1;wctx.stroke();
+  const marker={x:tri[0].x*bary({x:0,y:0})[0],y:0};const ww= [value*(1-saturation),value*saturation,1-value],mx=tri[0].x*ww[0]+tri[1].x*ww[1]+tri[2].x*ww[2],my=tri[0].y*ww[0]+tri[1].y*ww[1]+tri[2].y*ww[2];
+  wctx.beginPath();wctx.arc(mx,my,7,0,Math.PI*2);wctx.strokeStyle='#fff';wctx.lineWidth=3;wctx.stroke();wctx.strokeStyle='#222';wctx.lineWidth=1;wctx.stroke();
+  $('#wheelCenter').style.display='none';$('#wheelPreview').style.background=chosen;$('#wheelHex').textContent=chosen.toUpperCase();$('#customColor').value=chosen;
+ }
  function updateColor(){chosen=rgbHex(hsvToRgb(hue,saturation,value));paintWheel();}
- function wheelPoint(e){const r=wheel.getBoundingClientRect(),x=(e.clientX-r.left)*wheel.width/r.width-wheel.width/2,y=(e.clientY-r.top)*wheel.height/r.height-wheel.height/2,rad=Math.min(1,Math.hypot(x,y)/(wheel.width/2-3));hue=(Math.atan2(y,x)*180/Math.PI+360)%360;saturation=rad;updateColor();}
+ function wheelPoint(e){const r=wheel.getBoundingClientRect(),p={x:(e.clientX-r.left)*wheel.width/r.width,y:(e.clientY-r.top)*wheel.height/r.height},dx=p.x-180,dy=p.y-180,d=Math.hypot(dx,dy);
+  if(d>=132&&d<=177){hue=(Math.atan2(dy,dx)*180/Math.PI+360)%360}
+  else {const w=bary(p);if(insideTriangle(w)){value=Math.max(0,Math.min(1,w[0]+w[1]));saturation=value?Math.max(0,Math.min(1,w[1]/value)):0;$('#wheelBrightness').value=Math.round(value*100)}}
+  updateColor();
+ }
  wheel.addEventListener('pointerdown',e=>{wheelDrag=true;wheel.setPointerCapture(e.pointerId);wheelPoint(e)});wheel.addEventListener('pointermove',e=>{if(wheelDrag)wheelPoint(e)});wheel.addEventListener('pointerup',()=>wheelDrag=false);wheel.addEventListener('pointercancel',()=>wheelDrag=false);
  $('#wheelBrightness').addEventListener('input',e=>{value=Number(e.target.value)/100;updateColor()});
+ $('#opacityControl').addEventListener('input',e=>{opacity=Number(e.target.value)/100;window.mafahimOpacity=opacity});
  $('#customColor').addEventListener('input',e=>{chosen=e.target.value;$('#wheelPreview').style.background=chosen;$('#wheelHex').textContent=chosen.toUpperCase();$('#wheelCenter').style.background=chosen});
  $('#applyColor').addEventListener('click',()=>{chosen=$('#customColor').value;window.mafahimCurrentColor=chosen;const colorBox=$('#colors');if(colorBox){$$('.swatch').forEach(b=>b.classList.remove('active'));}picker.style.setProperty('--active-color',chosen);picker.dataset.color=chosen;$('#wheelPreview').style.background=chosen;document.querySelectorAll('.swatch').forEach(b=>b.classList.toggle('active',b.title.toLowerCase()===chosen.toLowerCase()));const evt=new CustomEvent('mafahim-color-change',{detail:{color:chosen}});document.dispatchEvent(evt);document.querySelector('#colorDialog').classList.remove('open')});
  // Keep the one-tap wheel opening; a press-and-hold samples a pixel from the canvas.
@@ -464,4 +515,20 @@ canvas.addEventListener('pointerup',e=>{if(window.mafahimState.tool==='text'){co
  paintWheel();
 })();
 </script>
+<style>/* Infinite-world drawing surface: viewport is the window, not a paper sheet. */
+.workspace{background:#f2f2ef!important}
+.stage{background:#f2f2ef!important}
+.canvas-wrap{position:relative!important;display:flex!important;align-items:center!important;justify-content:center!important;padding:0!important;overflow:hidden!important;background-color:#f2f2ef!important;background-image:radial-gradient(#c9c9c3 1px,transparent 1px)!important;background-size:24px 24px!important}
+.paper{flex:0 0 auto!important;width:var(--world-width,4096px)!important;height:var(--world-height,4096px)!important;max-width:none!important;min-width:var(--world-width,4096px)!important;min-height:var(--world-height,4096px)!important;aspect-ratio:auto!important;background:transparent!important;border:0!important;border-radius:0!important;box-shadow:none!important;overflow:visible!important;transform-origin:center center!important}
+#board{display:block!important;width:var(--world-width,4096px)!important;height:var(--world-height,4096px)!important;max-width:none!important;background:transparent!important;touch-action:none!important}
+@media(max-width:760px){.canvas-wrap{padding:0!important}.paper{width:var(--world-width,4096px)!important;height:var(--world-height,4096px)!important;max-width:none!important;min-width:var(--world-width,4096px)!important;min-height:var(--world-height,4096px)!important}.radial-picker{z-index:12}}
+@media(min-width:761px){.canvas-wrap{justify-content:center!important}.paper{width:var(--world-width,4096px)!important;height:var(--world-height,4096px)!important}}
+
+/* Compact hue-ring launcher; detailed selection happens in the full wheel dialog. */
+.radial-picker{left:14px!important;right:auto!important;top:auto!important;bottom:14px!important;width:64px!important;height:64px!important;aspect-ratio:1;border:0!important;padding:0!important;border-radius:50%!important;background:conic-gradient(from -90deg,#ff3030,#ffdf00,#39d353,#00d5ff,#315bff,#d43cff,#ff3030)!important;box-shadow:0 2px 10px #0003!important}
+.radial-picker:before{inset:25%!important;border-radius:0!important;clip-path:polygon(50% 0,0 100%,100% 100%);background:linear-gradient(145deg,#fff 0%,var(--active-color,#39bfd4) 52%,#111 100%)!important;border:0!important}
+.radial-picker:after{left:42%!important;top:42%!important;width:16%!important;height:16%!important;border:2px solid #fff!important;box-shadow:0 0 0 1px #222!important}
+.radial-picker span{display:none!important}
+@media(max-width:760px){.radial-picker{left:8px!important;bottom:8px!important;top:auto!important;width:56px!important;height:56px!important}}
+</style>
 </body></html>
