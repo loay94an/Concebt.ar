@@ -18,7 +18,24 @@ const path = require('path');
  const box=await page.locator('#board').boundingBox();
  await page.mouse.move(box.x+100,box.y+100); await page.mouse.down();
  await page.mouse.move(box.x+160,box.y+150,{steps:5}); await page.mouse.up();
+
+ // Exercise real two-contact touch input through Chromium's DevTools protocol.
+ const cdp=await page.context().newCDPSession(page);
+ const centerX=box.x+box.width/2, centerY=box.y+box.height/2;
+ const before=await page.locator('.paper').evaluate(el=>el.style.transform);
+ await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[
+  {x:centerX-35,y:centerY-20,id:1},{x:centerX+35,y:centerY+20,id:2}
+ ]});
+ await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[
+  {x:centerX-75,y:centerY-35,id:1},{x:centerX+75,y:centerY+35,id:2}
+ ]});
+ await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+ const after=await page.locator('.paper').evaluate(el=>el.style.transform);
+ const zoom=await page.locator('#zoomLabel').textContent();
+ if(before===after || !/translate\\(/.test(after) || !/scale\\((?!1(?:\\.0*)?\\))/.test(after))
+  throw new Error('Two-finger pinch did not change canvas transform: '+after);
+ if(!zoom || zoom.trim()==='100%') throw new Error('Zoom indicator did not update: '+zoom);
  if(errors.length) throw new Error('Browser errors: '+errors.join(' | '));
- console.log('PASS: app, brush library, preferences, workspace, grid, export and drawing interactions.');
+ console.log('PASS: app, brush library, preferences, workspace, grid, export, drawing, and two-finger pinch zoom/pan.');
  await browser.close();
 })().catch(e=>{console.error(e);process.exit(1)});
