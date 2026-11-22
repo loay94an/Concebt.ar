@@ -157,16 +157,36 @@ canvas{width:100%;height:100%;background:#fff}
  .bottom span:first-child{display:none}
 }
 
+
+/* Focused Concepts controls: functional radial color wheel and brush samples */
+.color-dialog{width:min(560px,95vw);background:#f5f5f2;color:#202020;border:1px solid #d3d3ce;border-radius:8px;padding:18px;box-shadow:0 18px 60px #0004}
+.color-dialog .dialog-head{border-color:#d7d7d1}.color-dialog .dialog-head h2{color:#202020}.color-dialog .dialog-head button{background:#fff;color:#222;border-color:#ccc}
+.wheel-layout{display:grid;grid-template-columns:minmax(220px,1fr) minmax(150px,.8fr);align-items:center;gap:18px}
+.wheel-stage{position:relative;display:grid;place-items:center;min-width:0}.wheel-stage canvas{width:min(100%,260px);height:auto;aspect-ratio:1;cursor:crosshair;touch-action:none}
+.wheel-center{position:absolute;width:34px;height:34px;border:3px solid #fff;border-radius:50%;box-shadow:0 1px 8px #0005;background:#24212e;pointer-events:none}
+.wheel-controls{display:flex;flex-direction:column;gap:13px}.wheel-preview{display:flex;align-items:center;gap:8px;font-size:11px;color:#555}.wheel-preview i{width:28px;height:28px;border:2px solid #fff;box-shadow:0 0 0 1px #bbb;border-radius:50%;background:#24212e}.wheel-preview code{font-size:11px;color:#222}.wheel-range{display:flex;flex-direction:column;gap:6px;color:#555;font-size:11px}.wheel-range input{width:100%;accent-color:#333}.color-dialog .dialog-row{color:#333;border-color:#ddd}.color-dialog .dialog-row input[type=color]{width:44px;height:30px;border:0;background:none}.color-dialog .primary{background:#222;color:#fff;border-color:#222;border-radius:5px;padding:10px}
+.calligraphy-control{display:block!important;min-width:140px}.calligraphy-control .range{display:block;min-width:100px}.calligraphy-control output{font-weight:700;color:var(--accent-strong)}
+.drawer-grid [data-preset] b{font-size:0;display:block;width:50px;height:15px;position:relative;background:transparent}
+.drawer-grid [data-preset] b:after{content:"";position:absolute;left:3px;right:3px;top:6px;height:4px;border-radius:99px;background:linear-gradient(90deg,#8b8176,#262626,#8b8176);transform:rotate(-7deg)}
+.drawer-grid [data-preset="pencil"] b:after{height:2px;background:repeating-linear-gradient(90deg,#4d4d4d 0 2px,#aaa 2px 3px);opacity:.85}
+.drawer-grid [data-preset="marker"] b:after{height:9px;top:3px;border-radius:2px;background:linear-gradient(90deg,#e7b74a88,#e7b74a);filter:blur(.3px)}
+.drawer-grid [data-preset="airbrush"] b:after{height:12px;top:1px;background:radial-gradient(ellipse,#3338 0 25%,transparent 70%)}
+.drawer-grid [data-preset="dotted"] b:after{height:5px;background:radial-gradient(circle,#444 1.4px,transparent 1.8px) 0 0/6px 6px}
+.drawer-grid [data-preset="fill"] b:after{height:10px;top:2px;left:18px;right:18px;border-radius:50%;background:#444}
+.drawer-grid [data-preset="line"] b:after{height:2px;background:#333;transform:rotate(-18deg)}
+.drawer-grid [data-preset="rect"] b:after{height:10px;top:2px;left:14px;right:14px;border:1.5px solid #333;background:transparent;border-radius:1px}
+.drawer-grid [data-preset="ellipse"] b:after{height:11px;top:1px;left:18px;right:18px;border:1.5px solid #333;background:transparent;border-radius:50%}
+@media(max-width:560px){.wheel-layout{grid-template-columns:1fr;gap:8px}.wheel-stage canvas{width:220px}.wheel-controls{display:grid;grid-template-columns:1fr 1fr;gap:9px}.wheel-preview,.wheel-controls .primary,.wheel-controls .dialog-row{grid-column:1/-1}.color-dialog{padding:12px}.calligraphy-control{grid-column:1/-1}}
 </style>
 </head>
 <body><main class="app">
 <header class="top"><div class="logo"><svg viewBox="0 0 48 48" fill="none"><path d="M10 34 24 7l14 27M16 25h16M13 39h22" stroke="white" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><circle cx="24" cy="25" r="3" fill="#fff"/></svg></div><div class="brand"><strong>مفاهيم</strong><small>استوديو الرسم الإبداعي · معاينة الويب</small></div><nav class="top-actions"><button id="undo">↶ تراجع</button><button id="redo">↷ إعادة</button><button id="clear">مسح اللوحة</button><button id="export" class="active">تنزيل PNG ⇧</button></nav></header>
 <section class="workspace">
 <aside class="rail" aria-label="أدوات الرسم">
-<button class="tool active" data-tool="pen" title="قلم">✎</button><button class="tool" data-tool="pencil" title="رصاص">⌁</button><button class="tool" data-tool="marker" title="قلم تمييز">▰</button><button class="tool" data-tool="line" title="خط">／</button><button class="tool" data-tool="rect" title="مستطيل">▱</button><button class="tool" data-tool="ellipse" title="دائرة">◯</button><button class="tool" data-tool="eraser" title="ممحاة">⌫</button><button class="tool" data-tool="hand" title="تحريك">✋</button><button class="tool" data-tool="select" title="تحديد">⌖</button><button class="tool" data-tool="fill" title="تعبئة">◉</button><button class="tool" data-tool="text" title="نص">T</button><button class="tool" data-tool="nudge" title="إزاحة">↝</button><button class="tool" id="imageBtn" title="استيراد صورة أو ملف">▧</button><input id="imageInput" type="file" accept="image/*" hidden>
+<button class="tool active" data-tool="pen" title="قلم">✎</button><button class="tool" data-tool="pencil" title="رصاص">⌁</button><button class="tool" data-tool="marker" title="قلم تمييز">▰</button><button class="tool" data-tool="calligraphy" title="قلم خط عربي">خط</button><button class="tool" data-tool="line" title="خط">／</button><button class="tool" data-tool="rect" title="مستطيل">▱</button><button class="tool" data-tool="ellipse" title="دائرة">◯</button><button class="tool" data-tool="eraser" title="ممحاة">⌫</button><button class="tool" data-tool="hand" title="تحريك">✋</button><button class="tool" data-tool="select" title="تحديد">⌖</button><button class="tool" data-tool="fill" title="تعبئة">◉</button><button class="tool" data-tool="text" title="نص">T</button><button class="tool" data-tool="nudge" title="إزاحة">↝</button><button class="tool" id="imageBtn" title="استيراد صورة أو ملف">▧</button><input id="imageInput" type="file" accept="image/*" hidden>
 </aside>
 <section class="stage"><div class="stagebar"><span>لوحة العمل</span><span>•</span><input id="title" aria-label="اسم المشروع" value="رسم جديد" style="width:130px;background:#242137;color:#fff;border:1px solid #343047;border-radius:7px;padding:5px"><div class="spacer"></div><span id="zoomLabel">100%</span><button id="zoomOut">−</button><button id="zoomIn">＋</button></div><div class="canvas-wrap"><div class="radial-picker" id="radialPicker" role="button" tabindex="0" title="منتقي الألوان"><span>COLOR</span></div><div class="quick-float"><button id="quickUndo" title="تراجع">↶</button><button id="quickRedo" title="إعادة">↷</button><button id="quickExport" title="تصدير">⇧</button><button id="quickPrefs" title="الإعدادات">⚙</button><button id="quickHelp" title="مساعدة">?</button></div><div class="paper"><canvas id="board" width="1000" height="1600"></canvas></div><div class="canvas-bottom-tools"><label><input type="checkbox" id="canvasGrid"> Grid</label><label><input type="checkbox" id="canvasSnap"> Snap</label><label><input type="checkbox" id="canvasGuide"> Guide</label><label><input type="checkbox" id="canvasArc"> Arc</label></div><div class="hint">اسحب بإصبعك أو الفأرة للرسم على اللوحة</div></div></section>
-<aside class="inspector"><h3>خصائص الأداة</h3><div class="section"><div>اللون</div><div class="muted">اختر لون الرسم</div><div class="colors" id="colors"></div></div><div class="section"><div>سُمك الفرشاة</div><div class="muted"><span id="widthLabel">6</span> px</div><input class="range" id="width" type="range" min="1" max="48" value="6"></div><div class="section"><div>الطبقات</div><div class="layer"><span>◉ الطبقة الأولى</span><span>⋮</span></div><button style="width:100%;margin-top:9px" id="addLayer">＋ إضافة طبقة</button></div><div class="section"><div>الصفحات</div><div class="layer"><span>▧ الصفحة 1</span><span>نشطة</span></div><button style="width:100%;margin-top:9px" id="addPage">＋ صفحة جديدة</button></div></aside>
+<aside class="inspector"><h3>خصائص الأداة</h3><div class="section calligraphy-control" id="calligraphyControls"><div>زاوية سنّ الخط العربي</div><div class="muted"><output id="calligraphyAngleValue">45°</output> · من 0° إلى 180°</div><input class="range" id="calligraphyAngle" type="range" min="0" max="180" step="1" value="45" aria-label="زاوية الخط العربي"></div><div class="section"><div>اللون</div><div class="muted">اختر لون الرسم</div><div class="colors" id="colors"></div></div><div class="section"><div>سُمك الفرشاة</div><div class="muted"><span id="widthLabel">6</span> px</div><input class="range" id="width" type="range" min="1" max="48" value="6"></div><div class="section"><div>الطبقات</div><div class="layer"><span>◉ الطبقة الأولى</span><span>⋮</span></div><button style="width:100%;margin-top:9px" id="addLayer">＋ إضافة طبقة</button></div><div class="section"><div>الصفحات</div><div class="layer"><span>▧ الصفحة 1</span><span>نشطة</span></div><button style="width:100%;margin-top:9px" id="addPage">＋ صفحة جديدة</button></div></aside>
 </section><footer class="bottom"><span>مفاهيم · استوديو الرسم</span><span>Grid <button id="gridToggle">شبكة</button> <button id="snapToggle">Snap</button> <button id="guideToggle">Guide</button> <button id="arcToggle">Arc</button> <button id="importMenu">استيراد</button> <button id="shareProject">مشاركة</button></span></footer>
 </main>
 <script>
@@ -229,7 +249,7 @@ window.mafahimState={get tool(){return tool},canvas,ctx,pos};
 <div class="overlay" id="projectsDialog"><div class="dialog"><div class="dialog-head"><h2>المشاريع والرسومات</h2><button data-x="projectsDialog">✕</button></div><div class="project-grid" id="projectGrid"><div class="project-card" id="newDrawingCard"><div class="project-thumb">＋</div><p>رسم جديد</p></div></div><div class="dialog-row"><button class="primary" id="saveProject">حفظ المشروع محلياً</button><button id="newDrawing">مشروع جديد</button></div><p class="dialog-note">المشاريع تحفظ محلياً في متصفحك ولا يتم رفعها إلى خادم.</p></div></div>
 
 <div class="overlay" id="importDialog"><div class="dialog"><div class="dialog-head"><h2>إضافة محتوى إلى اللوحة</h2><button data-x="importDialog">✕</button></div><div class="dialog-grid"><button id="choosePhoto">▧<br>الصور</button><button id="chooseFile">▤<br>الملفات</button><button id="pasteImage">▣<br>من الحافظة</button><button id="takePhoto">◎<br>التقاط صورة</button></div><p class="dialog-note">اختيار الصور والملفات من جهازك. التقاط الصورة يتطلب دعم الكاميرا من المتصفح.</p></div></div>
-<div class="overlay" id="colorDialog"><div class="dialog"><div class="dialog-head"><h2>منتقي الألوان</h2><button data-x="colorDialog">✕</button></div><div class="dialog-row">لون مخصص <input id="customColor" type="color" value="#24212e"></div><div class="dialog-row">شفافية الفرشاة <input id="opacityControl" type="range" min="5" max="100" value="100"></div><button id="applyColor">تطبيق اللون</button></div></div>
+<div class="overlay" id="colorDialog"><div class="dialog color-dialog"><div class="dialog-head"><h2>عجلة الألوان</h2><button data-x="colorDialog" aria-label="إغلاق">✕</button></div><div class="wheel-layout"><div class="wheel-stage"><canvas id="colorWheel" width="260" height="260" aria-label="عجلة اختيار اللون"></canvas><div class="wheel-center" id="wheelCenter"></div></div><div class="wheel-controls"><div class="wheel-preview"><span>اللون المختار</span><i id="wheelPreview"></i><code id="wheelHex">#24212E</code></div><label class="wheel-range">الإضاءة <input id="wheelBrightness" type="range" min="25" max="100" value="100"></label><label class="wheel-range">الشفافية <input id="opacityControl" type="range" min="5" max="100" value="100"></label><div class="dialog-row">لون دقيق <input id="customColor" type="color" value="#24212e"></div><button class="primary" id="applyColor">اعتماد اللون</button></div></div><p class="dialog-note">اسحب داخل العجلة لاختيار درجة اللون والتشبّع، أو استخدم الضغط المطوّل على زر اللون لالتقاط لون من الرسم.</p></div></div>
 <script>
 (()=>{
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
@@ -400,6 +420,47 @@ canvas.addEventListener('pointerup',e=>{if(window.mafahimState.tool==='text'){co
     if(e.key==='0'){e.preventDefault();scale=1;offsetX=0;offsetY=0;render()}
   });
   render();
+})();
+</script>
+
+<script>
+(()=>{
+ const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+ const wheel=$('#colorWheel'),wctx=wheel?.getContext('2d'),picker=$('#radialPicker');
+ if(!wheel||!wctx||!picker)return;
+ let hue=0,saturation=.72,value=1,chosen='#24212e',wheelDrag=false,longPressTimer=null,longPressFired=false;
+ const hsvToRgb=(h,s,v)=>{const f=(n,k=(n+h/60)%6)=>v-v*s*Math.max(Math.min(k,4-k,1),0);return [f(5),f(3),f(1)].map(x=>Math.round(x*255))};
+ const rgbHex=rgb=>'#'+rgb.map(x=>x.toString(16).padStart(2,'0')).join('');
+ function paintWheel(){const n=wheel.width,cx=n/2,cy=n/2,r=n/2-3,img=wctx.createImageData(n,n);for(let y=0;y<n;y++)for(let x=0;x<n;x++){const dx=x-cx,dy=y-cy,d=Math.hypot(dx,dy),i=(y*n+x)*4;if(d<=r){const h=(Math.atan2(dy,dx)*180/Math.PI+360)%360,s=Math.min(1,d/r),rgb=hsvToRgb(h,s,value);img.data[i]=rgb[0];img.data[i+1]=rgb[1];img.data[i+2]=rgb[2];img.data[i+3]=255}}wctx.putImageData(img,0,0);const a=hue*Math.PI/180,rr=saturation*r;const x=cx+Math.cos(a)*rr,y=cy+Math.sin(a)*rr;$('#wheelCenter').style.transform='translate('+(x-cx)+'px,'+(y-cy)+'px)';$('#wheelCenter').style.background=chosen;$('#wheelPreview').style.background=chosen;$('#wheelHex').textContent=chosen.toUpperCase();$('#customColor').value=chosen;}
+ function updateColor(){chosen=rgbHex(hsvToRgb(hue,saturation,value));paintWheel();}
+ function wheelPoint(e){const r=wheel.getBoundingClientRect(),x=(e.clientX-r.left)*wheel.width/r.width-wheel.width/2,y=(e.clientY-r.top)*wheel.height/r.height-wheel.height/2,rad=Math.min(1,Math.hypot(x,y)/(wheel.width/2-3));hue=(Math.atan2(y,x)*180/Math.PI+360)%360;saturation=rad;updateColor();}
+ wheel.addEventListener('pointerdown',e=>{wheelDrag=true;wheel.setPointerCapture(e.pointerId);wheelPoint(e)});wheel.addEventListener('pointermove',e=>{if(wheelDrag)wheelPoint(e)});wheel.addEventListener('pointerup',()=>wheelDrag=false);wheel.addEventListener('pointercancel',()=>wheelDrag=false);
+ $('#wheelBrightness').addEventListener('input',e=>{value=Number(e.target.value)/100;updateColor()});
+ $('#customColor').addEventListener('input',e=>{chosen=e.target.value;$('#wheelPreview').style.background=chosen;$('#wheelHex').textContent=chosen.toUpperCase();$('#wheelCenter').style.background=chosen});
+ $('#applyColor').addEventListener('click',()=>{chosen=$('#customColor').value;window.mafahimCurrentColor=chosen;const colorBox=$('#colors');if(colorBox){$$('.swatch').forEach(b=>b.classList.remove('active'));}picker.style.setProperty('--active-color',chosen);picker.dataset.color=chosen;$('#wheelPreview').style.background=chosen;document.querySelectorAll('.swatch').forEach(b=>b.classList.toggle('active',b.title.toLowerCase()===chosen.toLowerCase()));const evt=new CustomEvent('mafahim-color-change',{detail:{color:chosen}});document.dispatchEvent(evt);document.querySelector('#colorDialog').classList.remove('open')});
+ // Keep the one-tap wheel opening; a press-and-hold samples a pixel from the canvas.
+ picker.onclick=e=>{if(longPressFired){longPressFired=false;e.preventDefault();return}$('#colorDialog').classList.add('open');paintWheel()};
+ picker.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();$('#colorDialog').classList.add('open');paintWheel()}};
+ picker.addEventListener('pointerdown',()=>{longPressFired=false;longPressTimer=setTimeout(()=>{longPressFired=true;const c=$('#board'),rect=c.getBoundingClientRect(),x=Math.max(0,Math.min(c.width-1,Math.floor((rect.width/2)*c.width/rect.width))),y=Math.max(0,Math.min(c.height-1,Math.floor((rect.height/2)*c.height/rect.height)));try{const d=c.getContext('2d').getImageData(x,y,1,1).data;chosen=rgbHex([d[0],d[1],d[2]]);window.mafahimCurrentColor=chosen;picker.style.setProperty('--active-color',chosen);picker.dataset.color=chosen;document.dispatchEvent(new CustomEvent('mafahim-color-change',{detail:{color:chosen}}))}catch(_){}},550)});
+ ['pointerup','pointercancel','pointerleave'].forEach(ev=>picker.addEventListener(ev,()=>clearTimeout(longPressTimer)));
+ document.addEventListener('mafahim-color-change',e=>{if(e.detail?.color){const input=$('#customColor');if(input)input.value=e.detail.color}});
+ // Make the selected color the actual drawing color, not just a preview.
+ const originalColorSetter=Object.getOwnPropertyDescriptor(window,'mafahimCurrentColor');
+ Object.defineProperty(window,'mafahimCurrentColor',{configurable:true,get(){return chosen},set(v){chosen=v;paintWheel()}});
+ document.addEventListener('mafahim-color-change',e=>{if(e.detail?.color){const sw=$$('.swatch').find(b=>b.title.toLowerCase()===e.detail.color.toLowerCase());if(sw)sw.click();}});
+ // Per-tool calligraphy angle, persisted independently for each tool selection.
+ const angle=$('#calligraphyAngle'),angleValue=$('#calligraphyAngleValue');let activeTool='pen';
+ const angleKey='mafahimCalligraphyAngles';let angleMap={};try{angleMap=JSON.parse(localStorage.getItem(angleKey)||'{}')}catch(_){}
+ function showAngle(){const v=Number(angleMap[activeTool]??45);angle.value=v;angleValue.textContent=v+'°';$('#calligraphyControls').style.display=activeTool==='calligraphy'?'block':'none'}
+ angle.addEventListener('input',()=>{angleMap[activeTool]=Number(angle.value);angleValue.textContent=angle.value+'°';localStorage.setItem(angleKey,JSON.stringify(angleMap));window.mafahimCalligraphyAngle=Number(angle.value)});
+ $$('[data-tool]').forEach(b=>b.addEventListener('click',()=>{activeTool=b.dataset.tool;showAngle()}));showAngle();
+ // Calligraphy nib draws a consistent angled stroke using the selected 0–180° setting.
+ let last=null;const board=$('#board');board.addEventListener('pointerdown',e=>{if(activeTool==='calligraphy'){const r=board.getBoundingClientRect();last={x:(e.clientX-r.left)*board.width/r.width,y:(e.clientY-r.top)*board.height/r.height}}},true);
+ board.addEventListener('pointermove',e=>{if(activeTool!=='calligraphy'||!window.drawing)return;const r=board.getBoundingClientRect(),p={x:(e.clientX-r.left)*board.width/r.width,y:(e.clientY-r.top)*board.height/r.height};if(last){const a=Number(angle.value)*Math.PI/180,dx=Math.cos(a)*Number($('#width').value)*.5,dy=Math.sin(a)*Number($('#width').value)*.5,ctx=board.getContext('2d');ctx.save();ctx.globalAlpha=1;ctx.fillStyle=window.mafahimCurrentColor||'#24212e';ctx.beginPath();ctx.moveTo(last.x-dx,last.y-dy);ctx.lineTo(p.x-dx,p.y-dy);ctx.lineTo(p.x+dx,p.y+dy);ctx.lineTo(last.x+dx,last.y+dy);ctx.closePath();ctx.fill();ctx.restore()}last=p},true);
+ board.addEventListener('pointerup',()=>{last=null});
+ // Replace text glyphs in the brush library with visual stroke samples.
+ $$('[data-preset] b').forEach(el=>{el.setAttribute('aria-hidden','true');el.textContent='';});
+ paintWheel();
 })();
 </script>
 </body></html>
