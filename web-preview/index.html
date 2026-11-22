@@ -233,8 +233,8 @@ $('#runExport').onclick=()=>{const c=merged(),name=($('#title').value||'mafahim'
       const nextDistance=Math.max(1,distance(pts[0],pts[1]));
       const nextScale=clamp(gesture.scale*nextDistance/gesture.distance,.25,5);
       const ratio=nextScale/gesture.scale;
-      offsetX=gesture.offsetX+(gesture.mid.x-mid.x);
-      offsetY=gesture.offsetY+(gesture.mid.y-mid.y);
+      offsetX=gesture.offsetX+(mid.x-gesture.mid.x);
+      offsetY=gesture.offsetY+(mid.y-gesture.mid.y);
       const rect=viewport.getBoundingClientRect();
       const anchorX=gesture.mid.x-(rect.left+rect.width/2)-gesture.offsetX;
       const anchorY=gesture.mid.y-(rect.top+rect.height/2)-gesture.offsetY;
